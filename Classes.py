@@ -1,14 +1,20 @@
 import os
 import json
+import time
+
 import noname
 import function
 import wx
 import shutil
+# from sys pac
 import win32clipboard
 import win32con
 
+import threards
+
 
 class CaleFrame(noname.MyFrame1):
+
     def __init__(self, parent):
         noname.MyFrame1.__init__(self, parent)
 
@@ -75,6 +81,9 @@ class CaleFrame(noname.MyFrame1):
         self.search_tex_index = []
         self.search_pass_index = []
         self.search_unable_index = []
+
+        self.restore = threards.RestoreThread(1, 'restore', self.able_restore_list, self, self.names,
+                                              self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
 
     # file load method
     def load_tex(self, event):
@@ -400,8 +409,9 @@ class CaleFrame(noname.MyFrame1):
             self.m_listBox_info.Clear()
             self.m_listBox_info.Set(self.passed)
 
-            self.start = True
-            self.m_timer_restore.Start(250)
+            self.restore.add_save_path(self.save_path)
+
+            self.restore.start()
 
     def copy_file(self, event):
         self.file_save = wx.DirDialog(self, "保存", os.getcwd(),
@@ -423,30 +433,7 @@ class CaleFrame(noname.MyFrame1):
 
     # restore
     def restore_way(self, event):
-
-        if self.start and self.index < len(self.able_restore_list):
-            self.m_timer_restore.Stop()
-            name = self.able_restore_list[self.index]
-            self.m_staticText_now.SetLabel("当前：%s" % self.names[name])
-            self.m_gauge_now.SetValue(0)
-
-            function.restore_tool(name, self.names, self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
-            self.m_gauge_now.SetValue(100)
-            val_percent = str(round(100 * (self.index / len(self.able_restore_list)), 2))
-            val = function.re_int(100 * (self.index / len(self.able_restore_list)))
-            self.m_staticText_all.SetLabel("总进度：%s %%" % val_percent)
-            self.m_gauge_all.SetValue(val)
-            self.index += 1
-            self.m_timer_restore.Start(250)
-        elif self.start and self.index >= len(self.able_restore_list):
-            self.m_gauge_all.SetValue(100)
-
-            self.m_staticText_all.SetLabel("总进度：%s %%" % '100')
-            self.start = False
-            self.m_timer_restore.Stop()
-
-            if self.m_checkBox_autoopen.GetValue():
-                os.system(u"start %s" % self.save_path)
+        pass
 
     # tool
 
@@ -565,11 +552,17 @@ class CaleFrame(noname.MyFrame1):
             self.disable_restore_list = []
             self.disable_restore_list_show.clear()
             for name in self.tex_name:
-                if name not in self.mesh_name:
+                if name not in self.mesh_name and name.split(' ')[0] != "UISprite":
                     num += 1
-                    self.disable_restore_list_show.append("%d） %s" % (num, self.names[name]))
+                    try:
+                        self.disable_restore_list_show.append("%d） %s" % (num, self.names[name]))
+                    except KeyError:
+                        self.disable_restore_list_show.append("%d） %s" % (num, name))
                     self.disable_restore_list.append(name)
-                    self._search_unable.append(f"{name}{self.names[name]}")
+                    try:
+                        self._search_unable.append(f"{name}{self.names[name]}")
+                    except KeyError:
+                        self._search_unable.append(f"{name}{name}")
 
             self.m_listBox_unable.Clear()
             self.m_listBox_unable.Set(self.disable_restore_list_show)
@@ -596,7 +589,44 @@ class CaleFrame(noname.MyFrame1):
         self.m_gauge_all.SetValue(0)
 
     def exit_press(self, event):
-        self.Destroy()
+
+        if self.restore.is_alive():
+            message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
+
+            if message == wx.YES:
+                self.restore.stop_(True)
+                while self.restore.is_alive():
+                    time.sleep(1)
+                self.Destroy()
+            else:
+                pass
+        else:
+            message = wx.MessageBox("确认退出？", "提示", wx.YES_NO)
+            if message == wx.YES:
+                self.Destroy()
+            elif message == wx.CANCEL:
+                pass
+
+    def close_press( self, event ):
+
+        if self.restore.is_alive():
+            message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO )
+
+            if message == wx.YES:
+                if message == wx.YES:
+                    self.restore.stop_(True)
+                    while self.restore.is_alive():
+                        time.sleep(1)
+                self.Destroy()
+            else:
+                pass
+        else:
+            message = wx.MessageBox("确认退出？", "提示", wx.YES_NO)
+            if message == wx.YES:
+                self.Destroy()
+            elif message == wx.CANCEL:
+                pass
+
 
 
 class AddDialog(noname.MyDialog_add_new):
@@ -802,13 +832,13 @@ class ChangeNameDialog(noname.MyDialog_change_name):
         self.m_listBox7.Set(self.searched_show)
 
     def save_change(self, event):
-        with open(f"{self.start_path}\\files\\names", 'w')as file:
+        with open(f"{self.start_path}\\files\\names.json", 'w')as file:
             json.dump(self.names, file)
 
         self.Destroy()
 
     def close_save(self, event):
-        with open(f"{self.start_path}\\files\\names", 'w')as file:
+        with open(f"{self.start_path}\\files\\names.json", 'w')as file:
             json.dump(self.names, file)
 
         self.Destroy()
