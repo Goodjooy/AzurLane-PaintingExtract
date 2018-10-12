@@ -12,7 +12,7 @@ def get_longest(array_enter):
 
 def find(string, array_enter):
     # one->index two->value
-    if not array_enter :
+    if not array_enter:
         return array_enter
     able_next = [[], []]
     indexes = range(get_longest(array_enter))
@@ -72,7 +72,7 @@ def all_file_path(dir_name):
     for file in list_keep:
         if not isfile(dir_name + "\\" + file) and not (file in had):
             dir_list.append(file)
-        else:
+        elif file.split(' ')[0] != "UISprite":
             file_list.append(file)
     for file in dir_list:
         re = all_file_path(dir_name + "\\" + file)
@@ -222,7 +222,13 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
 
     pic = bg
 
-    pic.save("%s\\%s.png" % (save_area, names[ship_name]))
+    try:
+        names[ship_name]
+    except KeyError:
+        name = ship_name
+    else:
+        name = names[ship_name]
+    pic.save("%s\\%s.png" % (save_area, name))
 
 
 def restore_tool_one(mesh_path, pic_path, save_as, value, ):
