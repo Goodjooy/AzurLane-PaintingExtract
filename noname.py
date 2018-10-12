@@ -256,12 +256,11 @@ class MyFrame1 ( wx.Frame ):
 		
 		self.SetSizer( gSizer_main )
 		self.Layout()
-		self.m_timer_restore = wx.Timer()
-		self.m_timer_restore.SetOwner( self, wx.ID_ANY )
 		
 		self.Centre( wx.BOTH )
 		
 		# Connect Events
+		self.Bind( wx.EVT_CLOSE, self.close_press )
 		self.Bind( wx.EVT_MENU, self.load_tex, id = self.m_menuItem1.GetId() )
 		self.Bind( wx.EVT_MENU, self.load_Mesh, id = self.m_menuItem2.GetId() )
 		self.Bind( wx.EVT_MENU, self.load_tex_and_mesh, id = self.m_menuItem_mix.GetId() )
@@ -285,13 +284,15 @@ class MyFrame1 ( wx.Frame ):
 		self.m_listBox_unable.Bind( wx.EVT_LISTBOX_DCLICK, self.open_file )
 		self.m_checkBox_pass_finished.Bind( wx.EVT_CHECKBOX, self.pass_finished )
 		self.m_checkBox_autoopen.Bind( wx.EVT_CHECKBOX, self.auto_open )
-		self.Bind( wx.EVT_TIMER, self.restore_way, id=wx.ID_ANY )
 	
 	def __del__( self ):
 		pass
 	
 	
 	# Virtual event handlers, overide them in your derived class
+	def close_press( self, event ):
+		event.Skip()
+	
 	def load_tex( self, event ):
 		event.Skip()
 	
@@ -361,9 +362,6 @@ class MyFrame1 ( wx.Frame ):
 	def auto_open( self, event ):
 		event.Skip()
 	
-	def restore_way( self, event ):
-		event.Skip()
-	
 
 ###########################################################################
 ## Class MyDialog_change_name
@@ -384,7 +382,7 @@ class MyDialog_change_name ( wx.Dialog ):
 		bSizer11.Add( self.m_searchCtrl2, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		m_listBox7Choices = []
-		self.m_listBox7 = wx.ListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox7Choices, wx.LB_NEEDED_SB )
+		self.m_listBox7 = wx.ListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox7Choices, wx.LB_HSCROLL|wx.LB_NEEDED_SB )
 		self.m_listBox7.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNTEXT ) )
 		
 		bSizer11.Add( self.m_listBox7, 1, wx.ALL|wx.EXPAND, 5 )
@@ -428,6 +426,44 @@ class MyDialog_change_name ( wx.Dialog ):
 	
 	def save_change( self, event ):
 		event.Skip()
+	
+
+###########################################################################
+## Class MyDialog7
+###########################################################################
+
+class MyDialog7 ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 338,172 ), style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		sbSizer4 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"警告" ), wx.VERTICAL )
+		
+		m_listBox8Choices = []
+		self.m_listBox8 = wx.ListBox( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox8Choices, 0 )
+		sbSizer4.Add( self.m_listBox8, 1, wx.ALL|wx.EXPAND, 5 )
+		
+		m_sdbSizer4 = wx.StdDialogButtonSizer()
+		self.m_sdbSizer4Yes = wx.Button( sbSizer4.GetStaticBox(), wx.ID_YES )
+		m_sdbSizer4.AddButton( self.m_sdbSizer4Yes )
+		self.m_sdbSizer4No = wx.Button( sbSizer4.GetStaticBox(), wx.ID_NO )
+		m_sdbSizer4.AddButton( self.m_sdbSizer4No )
+		self.m_sdbSizer4Cancel = wx.Button( sbSizer4.GetStaticBox(), wx.ID_CANCEL )
+		m_sdbSizer4.AddButton( self.m_sdbSizer4Cancel )
+		m_sdbSizer4.Realize();
+		
+		sbSizer4.Add( m_sdbSizer4, 1, wx.EXPAND, 5 )
+		
+		
+		self.SetSizer( sbSizer4 )
+		self.Layout()
+		
+		self.Centre( wx.BOTH )
+	
+	def __del__( self ):
+		pass
 	
 
 ###########################################################################
