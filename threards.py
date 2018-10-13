@@ -1,13 +1,16 @@
-import threading
-import function
+import PIL.Image
 import os
+import threading
+import tempfile
+
+import function
 
 
 class RestoreThread(threading.Thread):
 
-    def __init__(self, theardID, name, list_pic, form, name_dic, mesh_list_path_dir, tex_list_path_dir, save_path):
+    def __init__(self, id_thread, name, list_pic, form, name_dic, mesh_list_path_dir, tex_list_path_dir, save_path):
         threading.Thread.__init__(self)
-        self.threadID = theardID
+        self.threadID = id_thread
 
         self.name = name
 
@@ -43,10 +46,32 @@ class RestoreThread(threading.Thread):
         self.format.start = False
 
         if self.format.m_checkBox_autoopen.GetValue():
-            os.system(u"start %s" % self.save_path)
+            os.system(r"start %s" % self.save_path)
 
     def stop_(self, stop: bool):
         self.stop = stop
 
-    def add_save_path(self, save_path):
+    def add_save_path(self, save_path: str):
         self.save_path = save_path
+
+    def update_list(self, restore_list):
+        self.list = restore_list
+
+
+class QuickRestore(threading.Thread):
+
+    def __init__(self, index, list_tex, list_mesh, father, work_path):
+        threading.Thread.__init__(self)
+
+        self.tex = list_tex[index]
+        self.mesh = list_mesh[index]
+        self.father = father
+
+        self.path = work_path
+
+    def run(self):
+        pic = function.restore_tool_no_save(self.mesh, self.tex)
+
+        pic.save("%s\\temp.png" % self.path)
+
+        os.system(r"start %s\temp.png" % self.path)
