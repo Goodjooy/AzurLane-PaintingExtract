@@ -1,15 +1,14 @@
-import os
 import json
-import time
-
-import noname
-import function
-import wx
+import os
 import shutil
-# from sys pac
+import time
 import win32clipboard
-import win32con
 
+import win32con
+import wx
+
+import function
+import noname
 import threards
 
 
@@ -17,6 +16,13 @@ class CaleFrame(noname.MyFrame1):
 
     def __init__(self, parent):
         noname.MyFrame1.__init__(self, parent)
+
+        try:
+            icon = wx.Icon("files\\icon.ico")
+        except FileNotFoundError:
+            pass
+        else:
+            self.SetIcon(icon)
 
         self.file_dialog = None
         self.dir_dialog = None
@@ -31,9 +37,11 @@ class CaleFrame(noname.MyFrame1):
         self.mesh_list_path_dir = {}
 
         self.choice = None
-
-        with open('files\\names.json', 'r')as file:
-            self.names = json.load(file)
+        try:
+            with open('files\\names.json', 'r')as file:
+                self.names = json.load(file)
+        except FileNotFoundError:
+            self.names = {}
 
         self.info_item = []
 
@@ -82,7 +90,9 @@ class CaleFrame(noname.MyFrame1):
         self.search_pass_index = []
         self.search_unable_index = []
 
-        self.restore = threards.RestoreThread(1, 'restore', self.able_restore_list, self, self.names,
+        self.restore_list = []
+
+        self.restore = threards.RestoreThread(1, 'restore', self.restore_list, self, self.names,
                                               self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
 
     # file load method
@@ -322,12 +332,16 @@ class CaleFrame(noname.MyFrame1):
 
     # choice
     def mesh_choice(self, event):
+
         if self.mesh_search:
             self.choice = self.mesh_name[self.search_mesh_index[self.m_listBox_mesh.GetSelection()]]
         else:
             self.choice = self.mesh_name[self.m_listBox_mesh.GetSelection()]
         if self.choice in self.tex_name:
             self.m_menuItem_choice.Enable(True)
+            SHOW = threards.QuickRestore(self.choice, self.tex_list_path_dir, self.mesh_list_path_dir, self,
+                                         self.start_path)
+            SHOW.start()
 
     def tex_choice(self, event):
         if self.tex_search:
@@ -336,6 +350,9 @@ class CaleFrame(noname.MyFrame1):
             self.choice = self.tex_name[self.m_listBox_tex.GetSelection()]
         if self.choice in self.mesh_name:
             self.m_menuItem_choice.Enable(True)
+            SHOW = threards.QuickRestore(self.choice, self.tex_list_path_dir, self.mesh_list_path_dir, self,
+                                         self.start_path)
+            SHOW.start()
 
     def open_file(self, event):
         if self.unable_search:
@@ -370,9 +387,7 @@ class CaleFrame(noname.MyFrame1):
             self.m_gauge_all.SetValue(0)
             self.save_path = self.file_save.GetPath()
 
-            function.restore_tool_one(self.mesh_list_path_dir[self.choice], self.tex_list_path_dir[self.choice],
-                                      self.save_path,
-                                      self.m_gauge_now)
+            shutil.copy(f"{self.start_path}\\temp.png", self.save_path)
 
         self.m_gauge_all.SetValue(100)
         if self.m_checkBox_autoopen.GetValue():
@@ -409,6 +424,7 @@ class CaleFrame(noname.MyFrame1):
             self.m_listBox_info.Clear()
             self.m_listBox_info.Set(self.passed)
 
+            self.restore.update_list(self.able_restore_list)
             self.restore.add_save_path(self.save_path)
 
             self.restore.start()
@@ -431,11 +447,7 @@ class CaleFrame(noname.MyFrame1):
             if self.m_checkBox_autoopen.GetValue():
                 os.system(self.save_path)
 
-    # restore
-    def restore_way(self, event):
-        pass
-
-    # tool
+    # tools
 
     def add_new(self, event):
         dialog = AddDialog(self, self.tex_name, self.names, self.start_path)
@@ -607,10 +619,10 @@ class CaleFrame(noname.MyFrame1):
             elif message == wx.CANCEL:
                 pass
 
-    def close_press( self, event ):
+    def close_press(self, event):
 
         if self.restore.is_alive():
-            message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO )
+            message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
 
             if message == wx.YES:
                 if message == wx.YES:
@@ -627,6 +639,78 @@ class CaleFrame(noname.MyFrame1):
             elif message == wx.CANCEL:
                 pass
 
+    def open_restart(self):
+
+        self.file_dialog = None
+        self.dir_dialog = None
+        self.file_save = None
+        self.dir_choice = None
+        self.tex_name = []
+        self.mesh_name = []
+        self.tex_name_cn = []
+        self.mesh_name_cn = []
+
+        self.tex_list_path_dir = {}
+        self.mesh_list_path_dir = {}
+
+        self.choice = None
+        try:
+            with open('files\\names.json', 'r')as file:
+                self.names = json.load(file)
+        except FileNotFoundError:
+            self.names = {}
+
+        self.info_item = []
+
+        self.pass_finish = True
+
+        self.able_restore = 0
+        self.able_restore_list = []
+        self.disable_restore_list_show = []
+        self.disable_restore_list = []
+
+        self.index = 0
+
+        self.passed = []
+        self.passed_list = []
+
+        self.save_path = ''
+        self.save_path_list = []
+
+        self.start = False
+        self.info_item_update = False
+
+        self.finished = False
+
+        self.start_path = os.getcwd()
+
+        self._searched_tex = []
+        self._searched_mesh = []
+        self._search_pass = []
+        self._search_unable = []
+
+        self.m_choice_pass.Enable(False)
+        self.m_choice_unable.Enable(False)
+
+        self.tex_search = False
+        self.mesh_search = False
+        self.pass_search = False
+        self.unable_search = False
+
+        self.search_mesh_show = []
+        self.search_tex_show = []
+        self.search_pass_show = []
+        self.search_unable_show = []
+
+        self.search_mesh_index = []
+        self.search_tex_index = []
+        self.search_pass_index = []
+        self.search_unable_index = []
+
+        self.restore_list = []
+
+        self.restore = threards.RestoreThread(1, 'restore', self.restore_list, self, self.names,
+                                              self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
 
 
 class AddDialog(noname.MyDialog_add_new):
@@ -842,6 +926,16 @@ class ChangeNameDialog(noname.MyDialog_change_name):
             json.dump(self.names, file)
 
         self.Destroy()
+
+
+class ShowPic(noname.MyDialog4):
+    def __init__(self, father, pic: wx.Bitmap):
+        noname.MyDialog4.__init__(self, father)
+
+        self.pic = pic
+
+    def show_pic(self, event):
+        self.m_bitmap2.Bitmap(self, self.pic)
 
 
 def main_part():
