@@ -142,7 +142,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_panel2.SetSizer( bSizer7 )
 		self.m_panel2.Layout()
 		bSizer7.Fit( self.m_panel2 )
-		self.m_listbook2.AddPage( self.m_panel2, u"Texture\n", False )
+		self.m_listbook2.AddPage( self.m_panel2, u"Texture\n", True )
 		self.m_panel1 = wx.Panel( self.m_listbook2, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer71 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -159,7 +159,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_panel1.SetSizer( bSizer71 )
 		self.m_panel1.Layout()
 		bSizer71.Fit( self.m_panel1 )
-		self.m_listbook2.AddPage( self.m_panel1, u"Mesh", True )
+		self.m_listbook2.AddPage( self.m_panel1, u"Mesh", False )
 		
 		bSizer2.Add( self.m_listbook2, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -429,44 +429,6 @@ class MyDialog_change_name ( wx.Dialog ):
 	
 
 ###########################################################################
-## Class MyDialog7
-###########################################################################
-
-class MyDialog7 ( wx.Dialog ):
-	
-	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 338,172 ), style = wx.DEFAULT_DIALOG_STYLE )
-		
-		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
-		
-		sbSizer4 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"警告" ), wx.VERTICAL )
-		
-		m_listBox8Choices = []
-		self.m_listBox8 = wx.ListBox( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox8Choices, 0 )
-		sbSizer4.Add( self.m_listBox8, 1, wx.ALL|wx.EXPAND, 5 )
-		
-		m_sdbSizer4 = wx.StdDialogButtonSizer()
-		self.m_sdbSizer4Yes = wx.Button( sbSizer4.GetStaticBox(), wx.ID_YES )
-		m_sdbSizer4.AddButton( self.m_sdbSizer4Yes )
-		self.m_sdbSizer4No = wx.Button( sbSizer4.GetStaticBox(), wx.ID_NO )
-		m_sdbSizer4.AddButton( self.m_sdbSizer4No )
-		self.m_sdbSizer4Cancel = wx.Button( sbSizer4.GetStaticBox(), wx.ID_CANCEL )
-		m_sdbSizer4.AddButton( self.m_sdbSizer4Cancel )
-		m_sdbSizer4.Realize();
-		
-		sbSizer4.Add( m_sdbSizer4, 1, wx.EXPAND, 5 )
-		
-		
-		self.SetSizer( sbSizer4 )
-		self.Layout()
-		
-		self.Centre( wx.BOTH )
-	
-	def __del__( self ):
-		pass
-	
-
-###########################################################################
 ## Class MyDialog_add_new
 ###########################################################################
 
@@ -667,27 +629,30 @@ class MyDialog_compare ( wx.Dialog ):
 class MyDialog4 ( wx.Dialog ):
 	
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 362,89 ), style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 719,555 ), style = wx.DEFAULT_DIALOG_STYLE )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
-		bSizer10 = wx.BoxSizer( wx.VERTICAL )
+		sbSizer6 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"label" ), wx.VERTICAL )
 		
-		self.m_staticText9 = wx.StaticText( self, wx.ID_ANY, u"进度：", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText9.Wrap( -1 )
-		bSizer10.Add( self.m_staticText9, 0, wx.ALL, 5 )
-		
-		self.m_gauge6 = wx.Gauge( self, wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
-		self.m_gauge6.SetValue( 0 ) 
-		bSizer10.Add( self.m_gauge6, 0, wx.ALL|wx.EXPAND, 5 )
+		self.m_bitmap2 = wx.StaticBitmap( sbSizer6.GetStaticBox(), wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, 0 )
+		sbSizer6.Add( self.m_bitmap2, 0, wx.ALL, 5 )
 		
 		
-		self.SetSizer( bSizer10 )
+		self.SetSizer( sbSizer6 )
 		self.Layout()
 		
 		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.Bind( wx.EVT_INIT_DIALOG, self.show_pic )
 	
 	def __del__( self ):
 		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def show_pic( self, event ):
+		event.Skip()
 	
 
