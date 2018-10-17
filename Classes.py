@@ -28,6 +28,8 @@ class CaleFrame(noname.MyFrame1):
         self.dir_dialog = None
         self.file_save = None
         self.dir_choice = None
+
+        # Azur lane values
         self.tex_name = []
         self.mesh_name = []
         self.tex_name_cn = []
@@ -94,6 +96,10 @@ class CaleFrame(noname.MyFrame1):
 
         self.restore = threards.RestoreThread(1, 'restore', self.restore_list, self, self.names,
                                               self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
+
+        self.azur_lane_type = False
+
+        self.girl_line_type = False
 
     # file load method
     def load_tex(self, event):
@@ -383,7 +389,6 @@ class CaleFrame(noname.MyFrame1):
         self.file_save = wx.FileDialog(self, "保存", os.getcwd(), self.names[self.choice], "*.png", style=wx.FD_SAVE)
 
         if self.file_save.ShowModal() == wx.ID_OK:
-            self.m_gauge_now.SetValue(0)
             self.m_gauge_all.SetValue(0)
             self.save_path = self.file_save.GetPath()
 
@@ -439,9 +444,9 @@ class CaleFrame(noname.MyFrame1):
             self.m_gauge_all.SetValue(0)
             for name in self.disable_restore_list:
                 num += 1
-                self.m_gauge_now.SetValue(0)
+
                 shutil.copyfile(self.tex_list_path_dir[name], f'{path}\\{self.names[name]}.png')
-                self.m_gauge_now.SetValue(100)
+
                 self.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.disable_restore_list))))
 
             if self.m_checkBox_autoopen.GetValue():
@@ -711,6 +716,32 @@ class CaleFrame(noname.MyFrame1):
 
         self.restore = threards.RestoreThread(1, 'restore', self.restore_list, self, self.names,
                                               self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path)
+
+    def azurlane_type(self, event):
+        type_bool = not self.azur_lane_type
+        self.m_menuItem_azurlane.Check(type_bool)
+        self.azur_lane_type = type_bool
+        self.__azur_lane_load(type_bool)
+
+    def girl_line_type(self, event):
+        type_bool = not self.girl_line_type
+        self.m_menuItem_girl_line.Check(type_bool)
+        self.girl_line_type = type_bool
+        self.__girl_line_load(type_bool)
+
+    def __azur_lane_load(self, open_able):
+        self.m_menuItem_tex.Enable(open_able)
+        self.m_menuItem_mesh.Enable(open_able)
+        self.m_menuItem_mix.Enable(open_able)
+        self.m_menuItem_meshonly.Enable(open_able)
+        self.m_menuItem_texonly.Enable(open_able)
+
+    def __girl_line_load(self, open_able):
+        self.m_menuItem_rgb.Enable(open_able)
+        self.m_menuItem_alpha.Enable(open_able)
+        self.m_menuItem_rgb_a.Enable(open_able)
+        self.m_menuItem_rgb_f.Enable(open_able)
+        self.m_menuItem_alpha_f.Enable(open_able)
 
 
 class AddDialog(noname.MyDialog_add_new):
