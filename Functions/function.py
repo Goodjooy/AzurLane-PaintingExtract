@@ -56,9 +56,9 @@ def all_file(dir_name):
         else:
             out_list.append(file)
     for file in dir_list:
-        re = all_file(dir_name + "\\" + file)
-        had.extend(re)
-        out_list.extend(re)
+        re_1 = all_file(dir_name + "\\" + file)
+        had.extend(re_1)
+        out_list.extend(re_1)
 
     return out_list
 
@@ -68,21 +68,37 @@ def all_file_path(dir_name):
     list_keep = os.listdir(dir_name)
     diction = {}
     dir_list = []
+    file_name_list = []
     file_list = []
     for file in list_keep:
         if not isfile(dir_name + "\\" + file) and not (file in had):
             dir_list.append(file)
-        elif file.split(' ')[0] != "UISprite":
+        elif file.split(' ')[0] == "UISprite":
+            pass
+        elif file.split(' ')[-1][0] == "#":
+            temp = file.split('\\')[-1].lower().replace('.png', '').split(" ")
+            if temp[0].split("_")[-1].lower() == "alpha":
+                temp = '_Alpha ' + temp[-1]
+                file_list.append(file)
+                file_name_list.append(file.replace(temp, "_again_Alpha"))
+            else:
+                temp = " " + temp[-1]
+                file_list.append(file)
+                file = file.replace(temp, "_again")
+                file_name_list.append(file)
+
+        else:
             file_list.append(file)
+            file_name_list.append(file)
     for file in dir_list:
         re = all_file_path(dir_name + "\\" + file)
         had.extend(re[0])
-        file_list.extend(re[0])
+        file_name_list.extend(re[0])
         for keys in re[1]:
             diction[keys] = re[1][keys]
-    for index in range(len(file_list)):
-        if not file_list[index] in had:
-            diction[file_list[index]] = dir_name + "\\" + file_list[index]
+    for index in range(len(file_name_list)):
+        if not file_name_list[index] in had:
+            diction[file_name_list[index]] = dir_name + "\\" + file_list[index]
             file_list[index] = dir_name + "\\" + file_list[index]
 
     return file_list, diction
@@ -124,7 +140,7 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
     printer = []
 
     # 文件信息读取，分类
-    with open(mesh_in_path[ship_name], 'r')as info:
+    with open(mesh_in_path[ship_name], 'r', encoding="utf-8")as info:
         for msg in info.readlines():
 
             if msg[0] == "g":
@@ -455,7 +471,7 @@ def restore_tool_no_save(mesh_path, pic_path):
     return pic
 
 
-def girl_font_line_restore(pic_path, pic_alpha, save_path):
+def girl_font_line_restore(pic_path, pic_alpha, save_path, is_one=False):
     pic = PIL.Image.open(pic_path, 'r')
     pic_a = PIL.Image.open(pic_alpha, 'r')
 
@@ -473,10 +489,14 @@ def girl_font_line_restore(pic_path, pic_alpha, save_path):
     temp = temp.copy()
     temp[:, :, -1] = alpha_list
 
-    out = temp.fromarray(numpy.uint8(temp))
+    out = PIL.Image.fromarray(numpy.uint8(temp))
 
     pic_path = pic_path.split("\\")[-1]
-    pic_path = pic_path[4:]
-    pic_path = pic_path.split('.')[0]
 
-    out.save("%s\\%s.png" % (save_path, pic_path))
+    pic_path = pic_path.split('.')[0]
+    if is_one:
+        out.save(save_path)
+    else:
+        out.save("%s\\%s.png" % (save_path, pic_path))
+
+

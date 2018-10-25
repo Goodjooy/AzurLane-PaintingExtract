@@ -1,3 +1,5 @@
+from typing import overload
+
 import PIL.Image as i
 import numpy
 
@@ -10,7 +12,9 @@ a = numpy.asarray(pic1)
 a = a.copy()
 a[:, :, -1] = l
 
-save=i.fromarray(numpy.uint8(a))
+save = i.fromarray(numpy.uint8(a))
 
 save.save('3.png')
 print(a)
+
+
