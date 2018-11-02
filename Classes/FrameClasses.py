@@ -38,11 +38,6 @@ class CaleFrame(noname.MyFrame1):
         self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
         self.azur_lane_with_cn = setting_dic["azur_lane"]["export_with_cn"]
 
-        self.girl_line_div_type = setting_dic["girl_line"]["div_type"]
-        self.girl_line_export_type = setting_dic["girl_line"]["export_type"]
-        self.girl_line_new_dir = setting_dic["girl_line"]["new_dir"]
-        self.girl_line_check = setting_dic["girl_line"]["check_before_start"]
-
         self.open_dir_after_finish = setting_dic["full"]["open_dir"]
         self.skip_had = setting_dic["full"]["skip_had"]
         self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
@@ -52,7 +47,8 @@ class CaleFrame(noname.MyFrame1):
             self.default = json.load(file)
 
         self.azur_lane = WorkClasses.AzurLaneWork(self, setting=self.setting_self, default=self.default)
-        self.girl_front_line = WorkClasses.GirlsFrontLine(self, setting=self.setting_self, default=self.default)
+
+        self.m_button_gui.Enable(False)
 
     # file load method
     # azur lane
@@ -72,34 +68,12 @@ class CaleFrame(noname.MyFrame1):
     def load_tex_and_mesh(self, event):
         self.azur_lane.load_tex_and_mesh()
 
-    # girl font line
-    def load_rgb(self, event):
-        self.girl_front_line.load_rgb()
-
-    def load_alpha(self, event):
-        self.girl_front_line.load_alpha()
-
-    def load_RGB_fold(self, event):
-        self.girl_front_line.load_rgb_f()
-
-    def load_alpha_fold(self, event):
-        self.girl_front_line.load_alpha_f()
-
-    def load_rgb_alpha_fold(self, event):
-        self.girl_front_line.load_rgb_alpha_f()
-
     # choice
     def mesh_choice(self, event):
         self.azur_lane.mesh_choice()
 
     def tex_choice(self, event):
         self.azur_lane.tex_choice()
-
-    def rgb_choice(self, event):
-        self.girl_front_line.rgb_choice()
-
-    def alpha_choice(self, event):
-        self.girl_front_line.alpha_choice()
 
     def open_file(self, event):
         self.azur_lane.open_file()
@@ -111,15 +85,11 @@ class CaleFrame(noname.MyFrame1):
     def export_choice(self, event):
         if self.azur_lane_type and self.azur_lane.is_choice() is not None:
             self.azur_lane.export_choice()
-        if self.girl_line_type and self.girl_front_line.is_choice() is not None:
-            self.girl_front_line.export_choice()
 
     def export_all(self, event):
         title = '保存'
         if self.azur_lane.is_able():
             title += "-碧蓝航线"
-        if self.girl_front_line.is_able():
-            title += '-少女前线'
         if self.default['lock']:
             address = self.default['export']
         else:
@@ -131,8 +101,7 @@ class CaleFrame(noname.MyFrame1):
 
             if self.azur_lane_type and self.azur_lane.is_able():
                 self.azur_lane.export_all(temp)
-            if self.girl_line_type and self.girl_front_line.is_able():
-                self.girl_front_line.export_all(temp)
+
         else:
             pass
 
@@ -167,12 +136,6 @@ class CaleFrame(noname.MyFrame1):
 
     def search_tex(self, event):
         self.azur_lane.search_tex()
-
-    def search_rgb(self, event):
-        self.girl_front_line.search_rgb()
-
-    def search_alpha(self, event):
-        self.girl_front_line.search_alpha()
 
     def search_pass(self, event):
         self.azur_lane.search_pass()
@@ -240,6 +203,13 @@ class CaleFrame(noname.MyFrame1):
             elif message == wx.CANCEL:
                 pass
 
+    def change_size(self, event):
+        pass
+
+    def helper(self, event):
+        dialog = Pattern()
+        dialog.Show()
+
     def setting(self, event):
         dialog = Setting(self, self.setting_self, self.default)
         temp = dialog.ShowModal()
@@ -252,17 +222,12 @@ class CaleFrame(noname.MyFrame1):
                 self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
                 self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
 
-                self.girl_line_div_type = setting_dic["girl_line"]["div_type"]
-                self.girl_line_export_type = setting_dic["girl_line"]["export_type"]
-                self.girl_line_new_dir = setting_dic["girl_line"]["new_dir"]
-
                 self.open_dir_after_finish = setting_dic["full"]["open_dir"]
                 self.skip_had = setting_dic["full"]["skip_had"]
                 self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
                 self.finish_exit = setting_dic["full"]["finish_exit"]
 
                 self.azur_lane.update_setting(self.setting_self, self.default)
-                self.girl_front_line.update_setting(self.setting_self, self.default)
 
 
 class AddDialog(noname.MyDialog_add_new):
@@ -489,12 +454,14 @@ class Setting(noname.MyDialog_Setting):
         self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
         self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
         self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
+
+        self.azur_lane_use_default = setting_dic["azur_lane"]['div_use']
+
         self.azur_lane_with_cn = setting_dic["azur_lane"]["export_with_cn"]
 
-        self.girl_line_div_type = setting_dic["girl_line"]["div_type"]
-        self.girl_line_export_type = setting_dic["girl_line"]["export_type"]
-        self.girl_line_new_dir = setting_dic["girl_line"]["new_dir"]
-        self.girl_line_check = setting_dic["girl_line"]["check_before_start"]
+        self.azur_lane_tex_limit = setting_dic["azur_lane"]['tex_limit']
+        self.azur_lane_mesh_limit = setting_dic["azur_lane"]['mesh_limit']
+        self.azur_lane_divide_list = setting_dic["azur_lane"]['divide_list']
 
         self.open_dir_after_finish = setting_dic["full"]["open_dir"]
         self.skip_had = setting_dic["full"]["skip_had"]
@@ -514,6 +481,13 @@ class Setting(noname.MyDialog_Setting):
         self.lock = self.default["lock"]
         self.export = self.default["export"]
 
+        self.az_div_list = []
+        self.reset_az_pattern()
+        self.index = len(self.az_div_list) + 1
+
+        self.__choice = None
+        self.m_button_del.Enable(False)
+
     def ok_click(self, event):
         self.change_work()
         self.IsChange = True
@@ -532,21 +506,7 @@ class Setting(noname.MyDialog_Setting):
         self.Destroy()
 
     def show_choice(self, event):
-        self.m_radioBox_az_div.SetSelection(self.azur_lane_div_type)
-        self.m_radioBox_az_type.SetSelection(self.azur_lane_export_type)
-        self.m_checkBox_az_dir.SetValue(self.azur_lane_new_dir)
-        self.m_checkBox_in_cn.SetValue(self.azur_lane_with_cn)
-
-        self.m_dirPicker_az_tex_dir.SetPath(self.azur_lane_default_tex_dir)
-        self.m_dirPicker_az_mesh_dir.SetPath(self.azur_lane_default_mesh_dir)
-
-        self.m_radioBox_gfl_div.SetSelection(self.girl_line_div_type)
-        self.m_radioBox_gfl_ex.SetSelection(self.girl_line_export_type)
-        self.m_checkBox_gfl_dir.SetValue(self.girl_line_new_dir)
-        self.m_checkBox_check.SetValue(self.girl_line_check)
-
-        self.m_dirPicker_gl_alpha_dir.SetPath(self.girl_line_default_rgb_dir)
-        self.m_dirPicker_gl_rbg_dir.SetPath(self.girl_line_default_alpha_dir)
+        self.az_show(event)
 
         self.m_checkBox_autoopen.SetValue(self.open_dir_after_finish)
         self.m_checkBox_pass_finished.SetValue(self.skip_had)
@@ -557,16 +517,19 @@ class Setting(noname.MyDialog_Setting):
 
         self.m_toggleBtn_lock.SetValue(self.lock)
 
+        self.change_div(event)
+
     def change_work(self):
         self.setting["azur_lane"]["div_type"] = self.m_radioBox_az_div.GetSelection()
         self.setting["azur_lane"]["export_type"] = self.m_radioBox_az_type.GetSelection()
+        self.setting['azur_lane']['div_use'] = self.m_radioBox_type_use.GetSelection()
+
         self.setting["azur_lane"]["new_dir"] = self.m_checkBox_az_dir.GetValue()
         self.setting["azur_lane"]["export_with_cn"] = self.m_checkBox_in_cn.GetValue()
 
-        self.setting["girl_line"]["div_type"] = self.m_radioBox_gfl_div.GetSelection()
-        self.setting["girl_line"]["export_type"] = self.m_radioBox_gfl_ex.GetSelection()
-        self.setting["girl_line"]["new_dir"] = self.m_checkBox_gfl_dir.GetValue()
-        self.setting["girl_line"]["check_before_start"] = self.m_checkBox_check.GetValue()
+        self.setting['azur_lane']['tex_limit'] = self.m_textCtrl_tex_limit.GetValue()
+        self.setting['azur_lane']['mesh_limit'] = self.m_textCtrl_mesh_limit.GetValue()
+        self.setting['azur_lane']['divide_list'] = self.azur_lane_divide_list
 
         self.setting["full"]["open_dir"] = self.m_checkBox_autoopen.GetValue()
         self.setting["full"]["skip_had"] = self.m_checkBox_pass_finished.GetValue()
@@ -579,9 +542,6 @@ class Setting(noname.MyDialog_Setting):
             self.default["azur_lane"]['default_tex_dir'] = self.m_dirPicker_az_tex_dir.GetPath()
             self.default["azur_lane"]['default_mesh_dir'] = self.m_dirPicker_az_mesh_dir.GetPath()
 
-            self.default["girl_line"]['default_rgb_dir'] = self.m_dirPicker_gl_rbg_dir.GetPath()
-            self.default["girl_line"]['default_alpha_dir'] = self.m_dirPicker_gl_alpha_dir.GetPath()
-
             self.default['export'] = self.m_dirPicker_export.GetPath()
 
     def lock_address(self, event):
@@ -593,14 +553,249 @@ class Setting(noname.MyDialog_Setting):
         self.m_dirPicker_az_mesh_dir.Enable(not self.lock)
         self.m_dirPicker_az_tex_dir.Enable(not self.lock)
 
-        self.m_dirPicker_gl_rbg_dir.Enable(not self.lock)
-        self.m_dirPicker_gl_alpha_dir.Enable(not self.lock)
+    def az_add(self, event):
+        dialog = AddPattern(self, self.index)
+
+        dialog.ShowModal()
+        if dialog.is_ok:
+            self.index += 1
+            index, name, dir_path, pattern = dialog.get()
+            self.azur_lane_divide_list.append({'name': name, 'dir': dir_path, 'pattern': pattern})
+
+            self.m_checkList_az_limits.Clear()
+            self.reset_az_pattern()
+            self.m_checkList_az_limits.Set(self.az_div_list)
+
+    def az_del(self, event):
+        self.m_checkList_az_limits.Clear()
+        if self.azur_lane_divide_list[self.__choice]['name'] == 'else':
+            pass
+        else:
+            del self.azur_lane_divide_list[self.__choice]
+
+        self.m_button_del.Enable(False)
+        self.reset_az_pattern()
+        self.m_checkList_az_limits.Set(self.az_div_list)
+
+    def choice(self, event):
+        self.__choice = self.m_checkList_az_limits.GetSelection()
+
+        self.m_button_del.Enable(True)
+
+    def change_type(self, event):
+        self.change(event)
+
+        self.az_type_use(event)
+
+    def change_div(self, event):
+        if self.m_radioBox_type_use.GetSelection() == 0:
+            if self.m_radioBox_az_div.GetSelection() == 2:
+                self.change(event)
+                self.m_checkList_az_limits.Clear()
+                self.m_checkList_az_limits.Set([
+                    r'1）其他：^.+$',
+                    r'2）皮肤：^[a-zA-Z0-9_]+_\d$',
+                    r'3）改造：^[a-zA-Z0-9_]+_[gG]$',
+                    r'4）婚纱：^[a-zA-Z0-9_]+_[hH]$',
+                    r'5）原皮：^[a-zA-Z0-9_]+$',
+                ])
+            else:
+                self.m_checkList_az_limits.Clear()
+
+    def change_pattern(self, event):
+        index_2 = self.m_checkList_az_limits.GetSelection()
+        dialog = AddPattern(self, index_2 + 1, self.azur_lane_divide_list[index_2]['name'],
+                            self.azur_lane_divide_list[index_2]['pattern'], self.azur_lane_divide_list[index_2]['dir'])
+        dialog.ShowModal()
+        if dialog.is_ok:
+            index, name, dir_path, pattern = dialog.get()
+            self.azur_lane_divide_list[index_2] = ({'name': name, 'dir': dir_path, 'pattern': pattern})
+
+            self.m_checkList_az_limits.Clear()
+            self.reset_az_pattern()
+            self.m_checkList_az_limits.Set(self.az_div_list)
 
     def GetValue(self):
         return self.setting
 
     def GetDefault(self):
         return self.default
+
+    def az_show(self, event):
+        self.m_radioBox_az_div.SetSelection(self.azur_lane_div_type)
+        self.m_radioBox_az_type.SetSelection(self.azur_lane_export_type)
+
+        self.m_radioBox_type_use.SetSelection(self.azur_lane_use_default)
+
+        self.m_checkBox_az_dir.SetValue(self.azur_lane_new_dir)
+        self.m_checkBox_in_cn.SetValue(self.azur_lane_with_cn)
+
+        self.m_dirPicker_az_tex_dir.SetPath(self.azur_lane_default_tex_dir)
+        self.m_dirPicker_az_mesh_dir.SetPath(self.azur_lane_default_mesh_dir)
+
+        self.m_textCtrl_tex_limit.SetLabel(self.azur_lane_tex_limit)
+        self.m_textCtrl_mesh_limit.SetLabel(self.azur_lane_mesh_limit)
+
+        self.m_checkList_az_limits.Set(self.az_div_list)
+
+        self.az_type_use(event=event)
+
+    def az_type_use(self, event):
+        if self.m_radioBox_type_use.GetSelection() == 0:
+            self.m_staticText15.Enable(False)
+            self.m_staticText161.Enable(False)
+            self.m_staticText171.Enable(False)
+
+            self.m_textCtrl_mesh_limit.Enable(False)
+            self.m_textCtrl_tex_limit.Enable(False)
+
+            self.m_button_del.Enable(False)
+            self.m_button_add.Enable(False)
+
+            self.m_checkList_az_limits.Enable(False)
+
+            ####
+            self.m_radioBox_az_type.Enable(True)
+            self.m_radioBox_az_div.Enable(True)
+
+            self.change_div(event=event)
+
+        else:
+            self.m_staticText15.Enable(True)
+            self.m_staticText161.Enable(True)
+            self.m_staticText171.Enable(True)
+
+            self.m_textCtrl_mesh_limit.Enable(True)
+            self.m_textCtrl_tex_limit.Enable(True)
+
+            self.m_button_del.Enable(False)
+            self.m_button_add.Enable(True)
+
+            self.m_checkList_az_limits.Enable(True)
+
+            ####
+            self.m_radioBox_az_type.Enable(False)
+            self.m_radioBox_az_div.Enable(False)
+
+            self.reset_az_pattern()
+            self.m_checkList_az_limits.Clear()
+            self.m_checkList_az_limits.Set(self.az_div_list)
+
+    def reset_az_pattern(self):
+        self.az_div_list.clear()
+        for value in range(len(self.azur_lane_divide_list)):
+            val_key = str(value + 1)
+            value = self.azur_lane_divide_list[value]
+            self.az_div_list.append(
+                '%s)%s:\t%s' % (val_key, value['dir'], value['pattern']))
+
+
+class AddPattern(noname.MyDialog_limit):
+    def __init__(self, parent, index, name='', pattern='', dir_path=''):
+        super().__init__(parent)
+
+        self.index = index
+        self.name = name
+        if self.name == '':
+            self.name = str(self.index)
+        self.pattern = pattern
+        self.dir = dir_path
+        self.m_sdbSizer5OK.Enable(False)
+        self.m_staticText_index.SetLabel("编号：%d" % self.index)
+        self.sys_in = True
+        self.m_textCtrl_limit.SetValue(self.pattern)
+        self.m_textCtrl_name.SetValue(self.name)
+        self.m_textCtrl_dir.SetValue(self.dir)
+        self.sys_in = False
+        if self.name == 'else':
+            self.m_textCtrl_name.Enable(False)
+        self.is_ok = False
+
+    def check_ok(self, event):
+        if not self.sys_in:
+            self.dir = self.m_textCtrl_dir.GetValue()
+            self.name = self.m_textCtrl_name.GetValue()
+            self.pattern = self.m_textCtrl_limit.GetValue()
+
+            if self.dir != '' and self.name != '' and self.pattern != '':
+                self.m_sdbSizer5OK.Enable(True)
+
+            self.is_ok = True
+
+    def save_exit(self, event):
+        self.Destroy()
+
+    def get(self):
+        return self.index, self.name, self.dir, self.pattern
+
+
+class Pattern(noname.MyFrame_pattern):
+    def __init__(self):
+        super().__init__(None)
+
+        info = [
+            r'^ ： 匹配字符串的开头',
+            r'$ ： 匹配字符串的末尾。',
+            r'. ： 匹配任意字符，除了换行符，当re.DOTALL标记被指定时，则可以匹配包括换行符的任意字符。',
+            r'[...] ： 用来表示一组字符,单独列出：[amk] 匹配 \'a\'，\'m\'或\'k\'',
+            r'[^...] ： 不在[]中的字符：[^abc] 匹配除了a,b,c之外的字符。',
+            r're* ： 匹配0个或多个的表达式。',
+            r're+ ： 匹配1个或多个的表达式。',
+            r're? ： 匹配0个或1个由前面的正则表达式定义的片段，非贪婪方式',
+            r're{ n} ： 精确匹配 n 个前面表达式。例如， o{2} 不能匹配 "Bob" 中的 "o"，但是能匹配 "food" 中的两个 o。',
+            r're{ n,} ： 匹配 n 个前面表达式。例如， o{2,} 不能匹配"Bob"中的"o"，但能匹配 "foooood"中的所有 o。"o{1,}" 等价于 "o+"。"o{0,}" 则等价于 "o*"。',
+            r're{ n, m} ： 匹配 n 到 m 次由前面的正则表达式定义的片段，贪婪方式',
+            r'a| b ： 匹配a或b',
+            r'(re) ： 匹配括号内的表达式，也表示一个组',
+            r'(?imx) ： 正则表达式包含三种可选标志：i, m, 或 x 。只影响括号中的区域。',
+            r'(?-imx) ： 正则表达式关闭 i, m, 或 x 可选标志。只影响括号中的区域。',
+            r'(?: re) ： 类似 (...), 但是不表示一个组',
+            r'(?imx: re) ： 在括号中使用i, m, 或 x 可选标志',
+            r'(?-imx: re) ： 在括号中不使用i, m, 或 x 可选标志',
+            r'(?#...) ： 注释.',
+            r'(?= re) ： 前向肯定界定符。如果所含正则表达式，以 ... 表示，在当前位置成功匹配时成功，否则失败。但一旦所含表达式已经尝试，匹配引擎根本没有提高；模式的剩余部分还要尝试界定符的右边。',
+            r'(?! re) ： 前向否定界定符。与肯定界定符相反；当所含表达式不能在字符串当前位置匹配时成功',
+            r'(?> re) ： 匹配的独立模式，省去回溯。',
+            r'\w ： 匹配字母数字及下划线',
+            r'\W ： 匹配非字母数字及下划线',
+            r'\s ： 匹配任意空白字符，等价于 [\t\n\r\f].',
+            r'\S ： 匹配任意非空字符',
+            r'\d ： 匹配任意数字，等价于 [0-9].',
+            r'\D ： 匹配任意非数字',
+            r'\A ： 匹配字符串开始',
+            r'\Z ： 匹配字符串结束，如果是存在换行，只匹配到换行前的结束字符串。',
+            r'\z ： 匹配字符串结束',
+            r'\G ： 匹配最后匹配完成的位置。',
+            r'\b ： 匹配一个单词边界，也就是指单词和空格间的位置。例如， \'er\\b\' 可以匹配"never" 中的 \'er\'，但不能匹配 "verb" 中的 \'er\'。',
+            r'\B ： 匹配非单词边界。\'er\B\' 能匹配 "verb" 中的 \'er\'，但不能匹配 "never" 中的 \'er\'。',
+            r'\n, \t, 等. ： 匹配一个换行符。匹配一个制表符。等',
+            r'\1...\9 ： 匹配第n个分组的内容。',
+            r'\10 ： 匹配第n个分组的内容，如果它经匹配。否则指的是八进制字符码的表达式',
+
+        ]
+        info2 = [
+            r'字符类',
+            r'[Pp]ython ： 匹配 "Python" 或 "python"',
+            r'rub[ye] ： 匹配 "ruby" 或 "rube"',
+            r'[aeiou] ： 匹配中括号内的任意一个字母',
+            r'[0-9] ： 匹配任何数字。类似于 [0123456789]',
+            r'[a-z] ： 匹配任何小写字母',
+            r'[A-Z] ： 匹配任何大写字母',
+            r'[a-zA-Z0-9] ： 匹配任何字母及数字',
+            r'[^aeiou] ： 除了aeiou字母以外的所有字符',
+            r'[^0-9] ： 匹配除了数字外的字符',
+            r'特殊字符类',
+            r'. ： 匹配除 "\n" 之外的任何单个字符。要匹配包括 \'\n\' 在内的任何字符，请使用象 \'[.\n]\' 的模式。',
+            r'\d ： 匹配一个数字字符。等价于 [0-9]。',
+            r'\D ： 匹配一个非数字字符。等价于 [^0-9]。',
+            r'\s ： 匹配任何空白字符，包括空格、制表符、换页符等等。等价于 [ \f\n\r\t\v]。',
+            r'\S ： 匹配任何非空白字符。等价于 [^ \f\n\r\t\v]。',
+            r'\w ： 匹配包括下划线的任何单词字符。等价于\'[A - Za - z0 - 9_]\'。',
+            r'\W ： 匹配任何非单词字符。等价于 \'[ ^ A - Za - z0 - 9_]\'',
+
+        ]
+        self.m_listBox_info.Set(info)
+        self.m_listBox_info2.Set(info2)
 
 
 def main_part():

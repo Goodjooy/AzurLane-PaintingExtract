@@ -8,6 +8,11 @@ def change_work():
                "full": {}}
     setting["azur_lane"]["div_type"] = 0
     setting["azur_lane"]["export_type"] = 0
+    setting["azur_lane"]["div_use"] = 0
+    setting["azur_lane"]["tex_limit"] = r'^\S\.[pP][Nn][Gg]$'
+    setting["azur_lane"]["mesh_limit"] = r'^\S-mesh\.[oO][Bb][jJ]$'
+    setting["azur_lane"]["divide_list"] = [{'name': 'else', 'dir': '其他', 'pattern': r'^.+$'}]
+
     setting["azur_lane"]["export_with_cn"] = True
     setting["azur_lane"]["new_dir"] = True
 
@@ -25,7 +30,7 @@ def change_work():
         json.dump(setting, i)
 
 
-# change_work()
+change_work()
 
 
 def emm_work():
@@ -44,5 +49,4 @@ def emm_work():
     with open("..\\files\\default.json", 'w')as file:
         json.dump(default, file)
 
-
-emm_work()
+# emm_work()

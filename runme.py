@@ -1,4 +1,4 @@
-import Classes
+import Classes.FrameClasses
 
 if __name__ == '__main__':
-    Classes.main_part()
+    Classes.FrameClasses.main_part()

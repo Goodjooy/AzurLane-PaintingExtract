@@ -1,133 +1,175 @@
 import os
+import shutil
 import threading
 import re
 
-import Methub
+import wx
+
 from Classes import noname
+from Functions import function
 
 
-class GirlSRestore(threading.Thread):
+class RestoreThread(threading.Thread):
 
-    def __init__(self, able_list: list, rgb_list: dict, alpha_list: dict, save_path: str, is_work: bool,
-                 form: noname.MyFrame1,
-                 setting: dict, full: dict):
-        super(GirlSRestore, self).__init__()
+    def __init__(self, id_thread, name, list_pic, form, name_dic, mesh_list_path_dir, tex_list_path_dir, save_path,
+                 setting, unable_restore_list, full):
+        threading.Thread.__init__(self)
+        self.threadID = id_thread
 
-        self.able_list = able_list
-        self.rgb_list = rgb_list
-        self.alpha_list = alpha_list
+        self.name = name
+
+        self.index = 0
+
+        self.list = list_pic
+
+        self.format = form
+        self.names = name_dic
+
+        self.mesh_list_path_dir = mesh_list_path_dir
+        self.tex_list_path_dir = tex_list_path_dir
         self.save_path = save_path
-        self.is_work = is_work
 
-        self.form = form
+        self.stop = False
 
         self.setting = setting
+
+        self.unable_restore_list = unable_restore_list
         self.full = full
 
     def run(self):
-        length = len(self.rgb_list)
-        if not self.is_work:
-            pass
-        else:
-            i = 0
-            if self.setting["check_before_start"]:
-                for val in self.able_list:
-                    Methub.tools.search(self.rgb_list, self.alpha_list, list(self.alpha_list.keys()), val)
-                    i += 1
-                    val_percent = str(round(100 * (i / len(self.able_list)), 2))
-                    val = round(100 * (i / len(self.rgb_list)))
-                    self.form.m_staticText_all.SetLabel("扫描进度：%s %%" % val_percent)
-                    self.form.m_gauge_all.SetValue(val)
-                i = 0
+        for self.index in range(len(self.list)):
+            if self.index < len(self.list) and not self.stop:
+                name = self.list[self.index]
+                if name not in self.names.keys():
+                    text = name
+                else:
+                    text = self.names[name]
+                self.format.m_staticText_now.SetLabel("当前：%s" % text)
+                if self.setting["export_with_cn"]:
+                    names = self.names
+                else:
+                    names = {}
+                if self.setting['div_use'] == 0:
+                    if self.setting["div_type"] == 1:
+                        key_use = name.split("_")[0]
+                        dir_name = self.names[key_use]
+                        save_path = f"{self.save_path}\\{dir_name}"
+                        os.makedirs(save_path, exist_ok=True)
 
-            for val in self.able_list:
-                if self.setting["use_type"] == 0:
-                    choice = self.setting["export_type"]
+                    elif self.setting["div_type"] == 2:
+                        pattern_skin = re.compile(r'^[a-zA-Z0-9_]+_\d$')
+                        pattern_power = re.compile(r'^[a-zA-Z0-9_]+_[gG]$')
+                        pattern_marry = re.compile(r'^[a-zA-Z0-9_]+_[hH]$')
+                        pattern_self = re.compile(r'^[a-zA-Z0-9_]+$')
+                        if pattern_skin.match(name) is not None:
 
-                    if choice == 0:
-                        save_path = f"{self.save_path}"
-
-                    elif choice == 1:
-                        pattern_per = re.compile(r'^pic_.+$')
-
-                        if pattern_per.match(val) is not None:
-                            save_path = f"{self.save_path}\\人形"
-                        else:
-                            save_path = f"{self.save_path}\\非人形"
-                    elif choice == 2:
-                        pattern_per = re.compile(r'^[Pp]ic_.+$')
-                        if pattern_per.match(val) is not None:
-                            address = val.replace('pic_', '').replace('_D', '')
-                            len_num = re.findall(r'_\d+', address)
-                            if len(len_num) != 0:
-                                address = address.replace(len_num[-1], '')
-                            if address.lower() == '':
-                                address += len_num[-1]
-                            save_path = f"{self.save_path}\\人形\\{address}"
-
-                        else:
-                            save_path = f"{self.save_path}\\非人形"
-
-                    elif choice == 3:
-                        pattern_skin = re.compile(r'^[Pp]ic_[\S ]+_\d+(_D)*$')
-                        pattern_per = re.compile(r'^[Pp]ic_[\S ]+(_D)*$')
-
-                        if pattern_skin.match(val) is not None:
                             save_path = f"{self.save_path}\\皮肤"
-                        elif pattern_per.match(val) is not None:
-                            save_path = f"{self.save_path}\\人形"
-                        else:
-                            save_path = f"{self.save_path}\\其他"
 
-                    elif choice == 4:
-                        pattern_dis = re.compile(r'^[pP]ic_[\S ]+?_*[1-9]*_D$')
-                        pattern_per = re.compile(r'^[Pp]ic_[\S ]+?_*[^D][1-9]*$')
+                        elif pattern_marry.match(name) is not None:
+                            save_path = f"{self.save_path}\\婚纱"
 
-                        if pattern_dis.match(val) is not None:
-                            save_path = f"{self.save_path}\\大破"
-                        elif pattern_per.match(val) is not None:
-                            save_path = f"{self.save_path}\\人形"
+                        elif pattern_power.match(name) is not None:
+                            save_path = f"{self.save_path}\\改造"
+
+                        elif pattern_self.match(name) is not None:
+                            save_path = f"{self.save_path}\\原皮"
                         else:
                             save_path = f"{self.save_path}\\其他"
 
                     else:
                         save_path = self.save_path
 
-                else:
+                elif self.setting['div_use'] == 1:
+                    list_work = self.setting['divide_list']
                     save_path = ''
-                    for setting in self.setting['divide_list'][1:]:
-                        pattern_er = re.compile(setting['pattern'])
-                        if pattern_er.match(val) is not None:
-                            save_path = f'{self.save_path}\\{setting["dir"]}'
+                    for val in list_work[1:]:
+                        pattern = re.compile(val['pattern'])
+                        if pattern.match(name) is not None:
+                            save_path = f"{self.save_path}\\{val['dir']}"
                             break
+                        else:
+                            save_path = ''
 
-                    if save_path == "":
-                        save_path = self.save_path
+                    if save_path == '':
+                        save_path = f"{self.save_path}\\其他"
+
+                else:
+                    save_path = self.save_path
+
                 os.makedirs(save_path, exist_ok=True)
-                Methub.Functions.girl_font_line_restore(self.rgb_list[val], self.alpha_list[val], save_path)
-                i += 1
 
-                val_percent = str(round(100 * (i / length), 2))
-                self.form.m_staticText_now.SetLabel("当前：%s" % val)
-                val = round(100 * (i / length))
-                self.form.m_staticText_all.SetLabel("总进度：%s %%" % val_percent)
-                self.form.m_gauge_all.SetValue(val)
+                function.restore_tool(name, names, self.mesh_list_path_dir, self.tex_list_path_dir, save_path)
 
-            self.form.m_staticText_all.SetLabel("总进度：%s %%" % '100')
-            self.form.m_gauge_all.SetValue(100)
-            self.form.start = False
+                val_percent = str(round(100 * (self.index / len(self.list)), 2))
+                val = function.re_int(100 * (self.index / len(self.list)))
+                self.format.m_staticText_all.SetLabel("总进度：%s %%" % val_percent)
+                self.format.m_gauge_all.SetValue(val)
+                self.index += 1
 
-            if self.full["open_dir"]:
-                os.system(r"start %s" % self.save_path)
+        if self.setting["export_type"] == 1:
+            num = 0
+            os.makedirs(f'{self.save_path}\\拷贝', exist_ok=True)
 
-    def set_value(self, rgb_list, alpha_list, save_path, able_list, setting, full):
-        self.rgb_list = rgb_list
-        self.alpha_list = alpha_list
+            for name in self.unable_restore_list:
+                num += 1
+
+                try:
+                    shutil.copyfile(self.tex_list_path_dir[name], f'{self.save_path}\\拷贝\\{self.names[name]}.png')
+                except KeyError:
+                    shutil.copyfile(self.tex_list_path_dir[name], f'{self.save_path}\\拷贝\\{name}.png')
+
+                self.format.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable_restore_list))))
+
+        else:
+            pass
+
+        self.format.m_staticText_all.SetLabel("总进度：%s %%" % '100')
+        self.format.start = False
+
+        if self.full["open_dir"]:
+            os.system(r"start %s" % self.save_path)
+
+        if self.full['finish_exit']:
+            self.format.exit()
+
+    def stop_(self, stop: bool):
+        self.stop = stop
+
+    def add_save_path(self, save_path: str):
         self.save_path = save_path
-        self.able_list = able_list
 
-        self.setting = setting
+    def update_list(self, restore_list, unable_restore_list):
+        self.list = restore_list
+        self.unable_restore_list = unable_restore_list
+
+
+class QuickRestore(threading.Thread):
+
+    def __init__(self, index, list_tex, list_mesh, father: noname.MyFrame1, work_path, full):
+        threading.Thread.__init__(self)
+
+        self.tex = list_tex[index]
+        self.mesh = list_mesh[index]
+        self.father = father
+
+        self.path = work_path
         self.full = full
 
-    def set_work(self, is_work: bool):
-        self.is_work = is_work
+    def run(self):
+        pic = function.restore_tool_no_save(self.mesh, self.tex)
+        x, y = self.father.m_scrolledWindow6.GetSize()
+        pic.save("%s\\temp.png" % self.path)
+        temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
+        x1, y1 = temp.GetSize()
+
+        scale = min(x / x1, y / y1)
+        size = (int(x1 * scale), int(y1 * scale))
+        temp = temp.Rescale(size[0], size[1], wx.IMAGE_QUALITY_HIGH)
+        temp = temp.ConvertToBitmap()
+        self.father.m_bitmap_show.ClearBackground()
+        self.father.m_bitmap_show.SetBitmap(temp)
+        if self.full["auto_open"] and False:
+            os.system(r'start ' + "%s\\temp.png" % self.path)
+
+
+
