@@ -1,12 +1,4 @@
-import Classes.frame_classes as fc
-import wx
-
-def main_part():
-    app = wx.App(False)
-    frame = fc.MainFrame(None)
-    frame.Show()
-
-    app.MainLoop()
+import Classes.FrameClasses
 
 if __name__ == '__main__':
-    main_part()
+    Classes.FrameClasses.main_part()

@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import time
+import re
 
 import wx
 
@@ -83,6 +84,9 @@ class AzurLaneWork(object):
 
         self.lock = default['lock']
 
+        self.pattern_tex = re.compile(self.setting['tex_limit'])
+        self.pattern_mesh = re.compile(self.setting['mesh_limit'])
+
         self.restore = Threads.RestoreThread(1, 'restore', self.restore_list, self.form, self.names,
                                              self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path,
                                              self.setting, full=self.full, unable_restore_list=self.unable_restore_list)
@@ -112,7 +116,10 @@ class AzurLaneWork(object):
                 num = 0
                 for path in paths:
                     num += 1
-                    name = path.split('\\')[-1].split('.')[0]
+                    if self.pattern_tex.match(path) is not None:
+                        name = path.split('\\')[-1].split('.')[0]
+                    else:
+                        continue
 
                     if name not in self.tex_name:
                         self.tex_name.append(name)
@@ -154,11 +161,11 @@ class AzurLaneWork(object):
                 for path in paths:
 
                     num += 1
-                    name = path.split('\\')[-1].split('.')[0].split('-')
-                    if name[-2] == 'ui':
-                        name = name[0] + "-" + name[1]
+                    if self.pattern_mesh.match(path) is not None:
+                        name = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
                     else:
-                        name = name[0]
+                        continue
+
                     if name not in self.mesh_name:
                         self.mesh_list_path_dir[name] = path
                         self.mesh_name.append(name)
@@ -201,23 +208,19 @@ class AzurLaneWork(object):
             self.form.m_gauge_mesh_load.SetValue(25)
             num = 0
             for path in paths.keys():
-                if paths[path].split('.')[-1] == 'obj' or paths[path].split('.')[-1] == "OBJ":
-                    path_old = path
-                    path = path.split('.')[0].split('-')
-                    if path[-2] == 'ui':
-                        path = path[0] + "-" + path[1]
-                    else:
-                        path = path[0]
-
-                    if path not in self.mesh_name:
-                        self.mesh_list_path_dir[path] = paths[path_old]
-                        self.mesh_name.append(path)
-                        try:
-                            self.mesh_name_china.append(f"{num}）{self.names[path]}——{path}")
-                            self._searched_mesh.append(f"{self.names[path]}{path}")
-                        except KeyError:
-                            self.mesh_name_china.append(f"{num}）{path}——{path}")
-                            self._searched_mesh.append(f"{path}")
+                if self.pattern_mesh.match(path) is not None:
+                    name = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
+                else:
+                    continue
+                if name not in self.mesh_name:
+                    self.mesh_list_path_dir[name] = paths[path]
+                    self.mesh_name.append(name)
+                    try:
+                        self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
+                        self._searched_mesh.append(f"{self.names[name]}{name}")
+                    except KeyError:
+                        self.mesh_name_china.append(f"{num}）{name}——{name}")
+                        self._searched_mesh.append(f"{name}")
 
                 num += 1
                 self.form.m_gauge_mesh_load.SetValue(25 + function.re_int(75 * (num / len(paths.keys()))))
@@ -239,8 +242,8 @@ class AzurLaneWork(object):
             address = os.getcwd()
 
         self.__dialog = wx.DirDialog(self.form, "打开", address,
-                                     style=wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR | wx.DD_DEFAULT_STYLE |
-                                           wx.DD_DIR_MUST_EXIST)
+                                     style=wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR | wx.DD_DEFAULT_STYLE
+                                           | wx.DD_DIR_MUST_EXIST)
         info = self.__dialog.ShowModal()
         if info == wx.ID_OK:
             self.form.m_staticText_load_tex.SetLabel("开始")
@@ -250,18 +253,21 @@ class AzurLaneWork(object):
             self.form.m_gauge_tex_load.SetValue(25)
             num = 0
             for path in paths.keys():
-                if paths[path].split('.')[-1] == 'png' or paths[path].split('.')[-1] == "PNG":
-                    path_old = path
-                    path = path.split('.')[0]
-                    if path not in self.tex_name:
-                        self.tex_list_path_dir[path] = paths[path_old]
-                        self.tex_name.append(path)
-                        try:
-                            self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
-                            self._searched_tex.append(f"{self.names[path]}{path}")
-                        except KeyError:
-                            self.tex_name_china.append(f"{num}）{path}——{path}")
-                            self._searched_tex.append(f"{path}")
+                path_old = path
+                if self.pattern_tex.match(path) is not None:
+                    path = path.split('\\')[-1].split('.')[0]
+                else:
+                    continue
+
+                if path not in self.tex_name:
+                    self.tex_list_path_dir[path] = paths[path_old]
+                    self.tex_name.append(path)
+                    try:
+                        self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
+                        self._searched_tex.append(f"{self.names[path]}{path}")
+                    except KeyError:
+                        self.tex_name_china.append(f"{num}）{path}——{path}")
+                        self._searched_tex.append(f"{path}")
                 num += 1
                 self.form.m_gauge_tex_load.SetValue(25 + function.re_int(75 * (num / len(paths.keys()))))
         self.form.m_staticText_load_tex.SetLabel("完成")
@@ -293,13 +299,9 @@ class AzurLaneWork(object):
             tex_num = mesh_num = 0
             for path in paths.keys():
                 # Mesh
-                if paths[path].split('.')[-1] == 'obj' or paths[path].split('.')[-1] == "OBJ":
+                if self.pattern_mesh.match(path) is not None:
                     path_old = path
-                    path = path.split('.')[0].split('-')
-                    if path[-2] == 'ui':
-                        path = path[0] + "-" + path[1]
-                    else:
-                        path = path[0]
+                    path = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
 
                     if path not in self.mesh_name:
                         self.mesh_list_path_dir[path] = paths[path_old]
@@ -313,11 +315,11 @@ class AzurLaneWork(object):
 
                     mesh_num += 1
                     self.form.m_gauge_mesh_load.SetValue(25 + function.re_int(75 * (mesh_num / len(paths.keys()))))
-                    break
+
                 # texture2D
-                if paths[path].split('.')[-1] == 'png' or paths[path].split('.')[-1] == "PNG":
+                elif self.pattern_tex.match(path) is not None:
                     path_old = path
-                    path = path.split('.')[0]
+                    path = path.split('\\')[-1].split('.')[0]
                     if path not in self.tex_name:
                         self.mesh_list_path_dir[path] = paths[path_old]
                         self.mesh_name.append(path)
@@ -327,10 +329,11 @@ class AzurLaneWork(object):
                         except KeyError:
                             self.tex_name_china.append(f"{tex_num}）{path}——{path}")
                             self._searched_tex.append(f"{path}")
-
                     tex_num += 1
                     self.form.m_gauge_tex_load.SetValue(25 + function.re_int(75 * (tex_num / len(paths.keys()))))
-                    break
+                else:
+                    continue
+
             self.form.m_gauge_tex_load.SetValue(100)
             self.form.m_gauge_mesh_load.SetValue(100)
 
@@ -622,5 +625,5 @@ class AzurLaneWork(object):
 
         self.lock = default['lock']
 
-
-
+        self.pattern_tex = re.compile(self.setting['tex_limit'])
+        self.pattern_mesh = re.compile(self.setting['mesh_limit'])

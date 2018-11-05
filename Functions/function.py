@@ -1,9 +1,6 @@
 import PIL.Image
-import numpy
-import os
 
-info_item = []
-scale = 0.5
+import os
 
 
 def get_longest(array_enter):
@@ -118,6 +115,7 @@ def isfile(file):
 
 def re_int(num):
     """四舍五入"""
+    scale = 0.5
     if scale >= 1:
         return num
     else:
@@ -130,9 +128,13 @@ def re_int(num):
             return int_num
 
 
-def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
-    """拼图用的函数"""
+def az_paint_restore(mesh_path: str, pic_path: str):
+    """
 
+    :param mesh_path:the path of mesh file
+    :param pic_path: the path of tex file
+    :return: PIL.Image->restored image
+    """
     # 用于存储相应参数
     blit_place = [None]
     cut_place = [None]
@@ -140,7 +142,7 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
     printer = []
 
     # 文件信息读取，分类
-    with open(mesh_in_path[ship_name], 'r', encoding="utf-8")as info:
+    with open(mesh_path, 'r', encoding="utf-8")as info:
         for msg in info.readlines():
 
             if msg[0] == "g":
@@ -185,7 +187,7 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
     bg = PIL.Image.new('RGBA', (X, Y), (255, 255, 255, 0))
 
     # 图片加载
-    img = PIL.Image.open(pic_in_path[ship_name], 'r')
+    img = PIL.Image.open(pic_path, 'r')
 
     width = img.width
     height = img.height
@@ -197,22 +199,22 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
         blit_place[num + 1][1] = Y - blit_place[num + 1][1]
         cut_place[num + 1][0] = cut_place[num + 1][0]
         cut_place[num + 1][1] = 1 - cut_place[num + 1][1]
-    Pos = [[], []]
+    pos = [[], []]
     for num in blit_place[1:]:
-        Pos[0].append(num[0])
-        Pos[1].append(num[1])
+        pos[0].append(num[0])
+        pos[1].append(num[1])
 
-    move_x = min(Pos[0])
-    move_y = min(Pos[1])
-    info_item.append("\t完成坐标计算")
+    move_x = min(pos[0])
+    move_y = min(pos[1])
+
     # 切割模块
     for index in restore_way:
         # 索引，拆分
-        blit_p = [blit_place[index[0]], blit_place[index[1]], blit_place[index[2]]]
+        print_p = [blit_place[index[0]], blit_place[index[1]], blit_place[index[2]]]
         cut_p = [cut_place[index[0]], cut_place[index[1]], cut_place[index[2]]]
 
-        blit_area = [min(blit_p[0][0], blit_p[1][0], blit_p[2][0]) - move_x,
-                     min(blit_p[0][1], blit_p[1][1], blit_p[2][1]) - move_y]
+        print_area = [min(print_p[0][0], print_p[1][0], print_p[2][0]) - move_x,
+                      min(print_p[0][1], print_p[1][1], print_p[2][1]) - move_y]
 
         cut_x = re_int(min(cut_p[0][0], cut_p[1][0], cut_p[2][0]) * width)
         cut_y = re_int(min((cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
@@ -226,17 +228,22 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
 
         cut = img.crop(cut_size)
 
-        printer.append([blit_area, cut])
-    info_item.append("\t完成图片切割")
+        printer.append([print_area, cut])
 
     # 开始拼图
-
+    num = 0
     for index in printer:
         bg.paste(index[1], index[0])
+        num += 1
 
-    info_item.append("\t完成拼图")
+    return bg
 
-    pic = bg
+
+def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
+    """拼图用的函数
+    """
+
+    pic = az_paint_restore(mesh_in_path[ship_name], pic_in_path[ship_name])
 
     try:
         names[ship_name]
@@ -247,228 +254,16 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
     pic.save("%s\\%s.png" % (save_area, name))
 
 
-def restore_tool_one(mesh_path, pic_path, save_as, value, ):
+def restore_tool_one(mesh_path, pic_path, save_as, ):
     """拼图用的函数"""
 
-    # 用于存储相应参数
-    blit_place = [None]
-    cut_place = [None]
-    restore_way = []
-    printer = []
-
-    # 文件信息读取，分类
-    with open(mesh_path, 'r')as info:
-        for msg in info.readlines():
-
-            if msg[0] == "g":
-                continue
-
-            elif msg[0] == "v" and msg[1] != 't':
-                msg = msg[:-3]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [int(msg[0]), int(msg[1])]
-                blit_place.append(msg)
-
-            elif msg[0] == "v" and msg[1] == "t":
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [float(msg[0]), float(msg[1])]
-                cut_place.append(msg)
-
-            elif msg[0] == 'f':
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = [int(msg[1].split('/')[0]),
-                       int(msg[2].split('/')[0]),
-                       int(msg[3].split('/')[0]),
-                       ]
-                restore_way.append(msg)
-
-    # 拼图准备
-    temp = ([], [])
-    for num in blit_place[1:]:
-        temp[0].append(num[0])
-        temp[1].append(num[1])
-
-    X = (max(temp[0]) - min(temp[0]))
-    Y = (max(temp[1]) - min(temp[1]))
-
-    del temp
-
-    # 背景准备
-
-    bg = PIL.Image.new('RGBA', (X, Y), (255, 255, 255, 0))
-
-    # 图片加载
-    img = PIL.Image.open(pic_path, 'r')
-
-    width = img.width
-    height = img.height
-
-    # 坐标镜像处理
-
-    for num in range(len(blit_place) - 1):
-        blit_place[num + 1][0] = -blit_place[num + 1][0]
-        blit_place[num + 1][1] = Y - blit_place[num + 1][1]
-        cut_place[num + 1][0] = cut_place[num + 1][0]
-        cut_place[num + 1][1] = 1 - cut_place[num + 1][1]
-    pos = [[], []]
-    for num in blit_place[1:]:
-        pos[0].append(num[0])
-        pos[1].append(num[1])
-
-    move_x = min(pos[0])
-    move_y = min(pos[1])
-    info_item.append("完成坐标计算")
-    # 切割模块
-    for index in restore_way:
-        # 索引，拆分
-        print_p = [blit_place[index[0]], blit_place[index[1]], blit_place[index[2]]]
-        cut_p = [cut_place[index[0]], cut_place[index[1]], cut_place[index[2]]]
-
-        print_area = [min(print_p[0][0], print_p[1][0], print_p[2][0]) - move_x,
-                      min(print_p[0][1], print_p[1][1], print_p[2][1]) - move_y]
-
-        cut_x = re_int(min(cut_p[0][0], cut_p[1][0], cut_p[2][0]) * width)
-        cut_y = re_int(min((cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
-
-        end_x = re_int(
-            (max(cut_p[0][0], cut_p[1][0], cut_p[2][0])) * width)
-        end_y = re_int(
-            (max(cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
-
-        cut_size = (cut_x, cut_y, end_x, end_y)
-
-        cut = img.crop(cut_size)
-
-        printer.append([print_area, cut])
-    info_item.append("完成图片切割")
-    value.SetValue(25)
-    # 开始拼图
-    num = 0
-    for index in printer:
-        bg.paste(index[1], index[0])
-        num += 1
-        finished = re_int(75 * (num / len(printer)))
-        value.SetValue(finished)
-    info_item.append("完成拼图")
-    pic = bg
+    pic = az_paint_restore(mesh_path=mesh_path, pic_path=pic_path)
 
     assert isinstance(save_as, str)
     pic.save(save_as)
-    value.SetValue(100)
 
 
 def restore_tool_no_save(mesh_path, pic_path):
     """拼图用的函数"""
 
-    # 用于存储相应参数
-    blit_place = [None]
-    cut_place = [None]
-    restore_way = []
-    printer = []
-
-    # 文件信息读取，分类
-    with open(mesh_path, 'r')as info:
-        for msg in info.readlines():
-
-            if msg[0] == "g":
-                continue
-
-            elif msg[0] == "v" and msg[1] != 't':
-                msg = msg[:-3]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [int(msg[0]), int(msg[1])]
-                blit_place.append(msg)
-
-            elif msg[0] == "v" and msg[1] == "t":
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [float(msg[0]), float(msg[1])]
-                cut_place.append(msg)
-
-            elif msg[0] == 'f':
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = [int(msg[1].split('/')[0]),
-                       int(msg[2].split('/')[0]),
-                       int(msg[3].split('/')[0]),
-                       ]
-                restore_way.append(msg)
-
-    # 拼图准备
-    temp = ([], [])
-    for num in blit_place[1:]:
-        temp[0].append(num[0])
-        temp[1].append(num[1])
-
-    X = (max(temp[0]) - min(temp[0]))
-    Y = (max(temp[1]) - min(temp[1]))
-
-    del temp
-
-    # 背景准备
-
-    bg = PIL.Image.new('RGBA', (X, Y), (255, 255, 255, 0))
-
-    # 图片加载
-
-    img = PIL.Image.open(pic_path, 'r')
-
-    width = img.width
-    height = img.height
-
-    # 坐标镜像处理
-
-    for num in range(len(blit_place) - 1):
-        blit_place[num + 1][0] = -blit_place[num + 1][0]
-        blit_place[num + 1][1] = Y - blit_place[num + 1][1]
-        cut_place[num + 1][0] = cut_place[num + 1][0]
-        cut_place[num + 1][1] = 1 - cut_place[num + 1][1]
-    pos = [[], []]
-    for num in blit_place[1:]:
-        pos[0].append(num[0])
-        pos[1].append(num[1])
-
-    move_x = min(pos[0])
-    move_y = min(pos[1])
-    info_item.append("完成坐标计算")
-    # 切割模块
-    for index in restore_way:
-        # 索引，拆分
-        print_p = [blit_place[index[0]], blit_place[index[1]], blit_place[index[2]]]
-        cut_p = [cut_place[index[0]], cut_place[index[1]], cut_place[index[2]]]
-
-        print_area = [min(print_p[0][0], print_p[1][0], print_p[2][0]) - move_x,
-                      min(print_p[0][1], print_p[1][1], print_p[2][1]) - move_y]
-
-        cut_x = re_int(min(cut_p[0][0], cut_p[1][0], cut_p[2][0]) * width)
-        cut_y = re_int(min((cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
-
-        end_x = re_int(
-            (max(cut_p[0][0], cut_p[1][0], cut_p[2][0])) * width)
-        end_y = re_int(
-            (max(cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
-
-        cut_size = (cut_x, cut_y, end_x, end_y)
-
-        cut = img.crop(cut_size)
-
-        printer.append([print_area, cut])
-
-    # 开始拼图
-    num = 0
-    for index in printer:
-        bg.paste(index[1], index[0])
-        num += 1
-
-    pic = bg
-
-    return pic
-
-
-
+    return az_paint_restore(mesh_path, pic_path)

@@ -24,11 +24,8 @@ class CaleFrame(noname.MyFrame1):
 
         self.start_path = os.getcwd()
 
-        self.start_path = os.getcwd()
         self.names = {}
-        self.azur_lane_type = True
 
-        self.girl_line_type = False
 
         with open("files\\setting.json", 'r')as file:
             setting_dic = json.load(file)
@@ -159,13 +156,6 @@ class CaleFrame(noname.MyFrame1):
         self.azur_lane_type = type_bool
         self.__azur_lane_load(type_bool)
 
-    def girl_line_type(self, event):
-
-        type_bool = not self.girl_line_type
-        self.m_menuItem_girl_line.Check(type_bool)
-        self.girl_line_type = type_bool
-        self.__girl_line_load(type_bool)
-
     def __azur_lane_load(self, open_able):
         self.m_menuItem_tex.Enable(open_able)
         self.m_menuItem_mesh.Enable(open_able)
@@ -173,18 +163,11 @@ class CaleFrame(noname.MyFrame1):
         self.m_menuItem_meshonly.Enable(open_able)
         self.m_menuItem_texonly.Enable(open_able)
 
-    def __girl_line_load(self, open_able):
-        self.m_menuItem_rgb.Enable(open_able)
-        self.m_menuItem_alpha.Enable(open_able)
-        self.m_menuItem_rgb_a.Enable(open_able)
-        self.m_menuItem_rgb_f.Enable(open_able)
-        self.m_menuItem_alpha_f.Enable(open_able)
-
     def exit(self):
         with open("%s\\files\\setting.json" % self.start_path, 'w')as file_save:
             json.dump(self.setting_self, file_save)
-            with open("%s\\files\\default.json" % self.start_path, 'w')as file_:
-                json.dump(self.default, file_)
+        with open("%s\\files\\default.json" % self.start_path, 'w')as file_:
+            json.dump(self.default, file_)
         if self.azur_lane.restore.is_alive():
             message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
 
@@ -211,7 +194,7 @@ class CaleFrame(noname.MyFrame1):
         dialog.Show()
 
     def setting(self, event):
-        dialog = Setting(self, self.setting_self, self.default)
+        dialog = Setting(self, self.setting_self, self.default, self.start_path)
         temp = dialog.ShowModal()
         if temp == 0:
             if dialog.IsChange:
@@ -448,8 +431,14 @@ class ChangeNameDialog(noname.MyDialog_change_name):
 class Setting(noname.MyDialog_Setting):
     lock: bool
 
-    def __init__(self, parent, setting_dic, default):
+    def __init__(self, parent, setting_dic, default, def_path):
         super().__init__(parent=parent)
+
+        self.path = def_path
+        temp = wx.Image('%s\\files\\bg_story_litang.png' % self.path, wx.BITMAP_TYPE_PNG)
+        temp = temp.ConvertToBitmap()
+        print(self.m_bitmap2.GetSize())
+        self.m_bitmap2.SetBitmap(temp)
 
         self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
         self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
@@ -461,6 +450,7 @@ class Setting(noname.MyDialog_Setting):
 
         self.azur_lane_tex_limit = setting_dic["azur_lane"]['tex_limit']
         self.azur_lane_mesh_limit = setting_dic["azur_lane"]['mesh_limit']
+
         self.azur_lane_divide_list = setting_dic["azur_lane"]['divide_list']
 
         self.open_dir_after_finish = setting_dic["full"]["open_dir"]
@@ -485,8 +475,19 @@ class Setting(noname.MyDialog_Setting):
         self.reset_az_pattern()
         self.index = len(self.az_div_list) + 1
 
-        self.__choice = None
-        self.m_button_del.Enable(False)
+        self.__choice = -1
+        self.m_bpButton_del.Enable(False)
+        self.m_bpButton_up.Enable(False)
+        self.m_bpButton_down.Enable(False)
+
+        self.m_bpButton6_default_mesh.Enable(False)
+        self.m_bpButton_defualt_tex.Enable(False)
+
+        self.default_tex_pattern = "^.+\\.[pP][Nn][Gg]$"
+        self.default_mesh_pattern = "^.+-mesh\\.[oO][Bb][jJ]$"
+
+        self.tex_work = False
+        self.mesh_work = False
 
     def ok_click(self, event):
         self.change_work()
@@ -573,14 +574,25 @@ class Setting(noname.MyDialog_Setting):
         else:
             del self.azur_lane_divide_list[self.__choice]
 
-        self.m_button_del.Enable(False)
+        self.m_bpButton_del.Enable(False)
+        self.m_bpButton_up.Enable(False)
+        self.m_bpButton_down.Enable(False)
         self.reset_az_pattern()
         self.m_checkList_az_limits.Set(self.az_div_list)
 
     def choice(self, event):
         self.__choice = self.m_checkList_az_limits.GetSelection()
 
-        self.m_button_del.Enable(True)
+        if self.__choice != 0:
+            self.m_bpButton_del.Enable(True)
+        if self.__choice <= 1:
+            self.m_bpButton_up.Enable(False)
+        else:
+            self.m_bpButton_up.Enable(True)
+        if self.__choice == len(self.azur_lane_divide_list) - 1 or self.__choice == 0:
+            self.m_bpButton_down.Enable(False)
+        else:
+            self.m_bpButton_down.Enable(True)
 
     def change_type(self, event):
         self.change(event)
@@ -614,6 +626,69 @@ class Setting(noname.MyDialog_Setting):
             self.m_checkList_az_limits.Clear()
             self.reset_az_pattern()
             self.m_checkList_az_limits.Set(self.az_div_list)
+
+    def az_up(self, event):
+
+        temp = self.azur_lane_divide_list[self.__choice - 1]
+
+        self.azur_lane_divide_list[self.__choice - 1] = self.azur_lane_divide_list[self.__choice]
+
+        self.azur_lane_divide_list[self.__choice] = temp
+
+        self.change(event)
+
+        self.reset_az_pattern()
+        self.m_checkList_az_limits.Clear()
+        self.m_checkList_az_limits.Set(self.az_div_list)
+
+        self.__choice -= 1
+        self.m_checkList_az_limits.SetSelection(self.__choice)
+
+        self.choice(event)
+
+    def az_down(self, event):
+        temp = self.azur_lane_divide_list[self.__choice + 1]
+
+        self.azur_lane_divide_list[self.__choice + 1] = self.azur_lane_divide_list[self.__choice]
+
+        self.azur_lane_divide_list[self.__choice] = temp
+
+        self.change(event)
+
+        self.reset_az_pattern()
+        self.m_checkList_az_limits.Clear()
+        self.m_checkList_az_limits.Set(self.az_div_list)
+
+        self.__choice += 1
+        self.m_checkList_az_limits.SetSelection(self.__choice)
+
+        self.choice(event)
+
+    def default_mesh(self, event):
+        self.change(event)
+
+        self.m_textCtrl_mesh_limit.SetLabel(self.default_mesh_pattern)
+        self.mesh_work = True
+
+    def default_tex(self, event):
+        self.change(event)
+
+        self.m_textCtrl_tex_limit.SetLabel(self.default_tex_pattern)
+        self.tex_work = True
+
+    def change_reset_mesh(self, event):
+        self.change(event)
+        if self.mesh_work:
+            self.mesh_work = False
+        else:
+            self.m_bpButton6_default_mesh.Enable(True)
+
+    def change_reset_tex(self, event):
+        self.change(event)
+        if self.tex_work:
+            self.tex_work = False
+        else:
+            self.m_bpButton_defualt_tex.Enable(True)
 
     def GetValue(self):
         return self.setting
@@ -649,8 +724,17 @@ class Setting(noname.MyDialog_Setting):
             self.m_textCtrl_mesh_limit.Enable(False)
             self.m_textCtrl_tex_limit.Enable(False)
 
-            self.m_button_del.Enable(False)
-            self.m_button_add.Enable(False)
+            self.m_textCtrl_mesh_limit.SetLabel(self.default_mesh_pattern)
+            self.m_textCtrl_tex_limit.SetLabel(self.default_tex_pattern)
+
+            self.m_bpButton_del.Enable(False)
+            self.m_bpButton_add.Enable(False)
+
+            self.m_bpButton_up.Enable(False)
+            self.m_bpButton_down.Enable(False)
+
+            self.m_bpButton6_default_mesh.Enable(False)
+            self.m_bpButton_defualt_tex.Enable(False)
 
             self.m_checkList_az_limits.Enable(False)
 
@@ -668,8 +752,23 @@ class Setting(noname.MyDialog_Setting):
             self.m_textCtrl_mesh_limit.Enable(True)
             self.m_textCtrl_tex_limit.Enable(True)
 
-            self.m_button_del.Enable(False)
-            self.m_button_add.Enable(True)
+            self.m_bpButton_del.Enable(False)
+            self.m_bpButton_add.Enable(True)
+
+            self.m_bpButton_up.Enable(False)
+            self.m_bpButton_down.Enable(False)
+
+            self.m_textCtrl_mesh_limit.SetLabel(self.azur_lane_mesh_limit)
+            self.m_textCtrl_tex_limit.SetLabel(self.azur_lane_tex_limit)
+
+            if self.m_textCtrl_tex_limit.GetValue() != self.default_tex_pattern:
+                self.m_bpButton_defualt_tex.Enable(True)
+            else:
+                self.m_bpButton_defualt_tex.Enable(False)
+            if self.m_textCtrl_mesh_limit.GetValue() != self.default_mesh_pattern:
+                self.m_bpButton6_default_mesh.Enable(True)
+            else:
+                self.m_bpButton6_default_mesh.Enable(False)
 
             self.m_checkList_az_limits.Enable(True)
 
