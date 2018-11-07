@@ -1,7 +1,7 @@
 import os
+import re
 import shutil
 import threading
-import re
 
 import wx
 
@@ -126,6 +126,8 @@ class RestoreThread(threading.Thread):
         self.format.m_staticText_all.SetLabel("总进度：%s %%" % '100')
         self.format.start = False
 
+        self.format.m_gauge_all.SetValue(100)
+
         if self.full["open_dir"]:
             os.system(r"start %s" % self.save_path)
 
@@ -145,31 +147,75 @@ class RestoreThread(threading.Thread):
 
 class QuickRestore(threading.Thread):
 
-    def __init__(self, index, list_tex, list_mesh, father: noname.MyFrame1, work_path, full):
+    def __init__(self, index, list_tex, list_mesh=None, father: noname.MyFrame1 = None, work_path='', full=None,
+                 back=2):
         threading.Thread.__init__(self)
 
         self.tex = list_tex[index]
-        self.mesh = list_mesh[index]
+        if list_mesh is None:
+            self.no_restore = True
+        else:
+            self.no_restore = False
+            self.mesh = list_mesh[index]
         self.father = father
 
         self.path = work_path
         self.full = full
 
+        self.back = back
+
     def run(self):
-        pic = function.restore_tool_no_save(self.mesh, self.tex)
-        x, y = self.father.m_scrolledWindow6.GetSize()
+        size = tuple(self.father.m_bitmap_show.GetSize())
+        if not self.no_restore:
+            pic = function.restore_tool_no_save(self.mesh, self.tex, size)
+
+        else:
+            pic = function.pic_transform(self.tex, size)
+
         pic.save("%s\\temp.png" % self.path)
         temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
-        x1, y1 = temp.GetSize()
 
-        scale = min(x / x1, y / y1)
-        size = (int(x1 * scale), int(y1 * scale))
-        temp = temp.Rescale(size[0], size[1], wx.IMAGE_QUALITY_HIGH)
         temp = temp.ConvertToBitmap()
         self.father.m_bitmap_show.ClearBackground()
         self.father.m_bitmap_show.SetBitmap(temp)
+
+        self.father.m_notebook_info.SetSelection(2)
+
+        # time.sleep(3)
+        # if
+        # self.father.m_notebook_info.SetSelection(self.back)
         if self.full["auto_open"] and False:
             os.system(r'start ' + "%s\\temp.png" % self.path)
 
 
+class BackInfo(threading.Thread):
+    def __init__(self, az, ):
+        super(BackInfo, self).__init__()
+        self.father = az
 
+    def run(self):
+        self.father.update_names()
+
+
+class CompareThread(threading.Thread):
+    def __init__(self, father):
+        super().__init__()
+        self.father = father
+
+    def compare(self):
+        num = 0
+        for name in self.father.old_fold_list[0]:
+            name_old = name
+            name = name[len(self.father.old_fold) + 1:]
+            name = "%s\\%s" % (self.father.new_fold, name)
+
+            if name not in self.father.new_fold_list[0]:
+                num += 1
+                if name not in self.father._new_add:
+                    self.father._new_add.append(name_old)
+                    self.father._new_add_show.append("%d） %s" % (num, name_old))
+        self.father.frame.m_listBox_deffer.Clear()
+        self.father.frame.m_listBox_deffer.Set(self.father._new_add_show)
+
+    def run(self):
+        self.compare()

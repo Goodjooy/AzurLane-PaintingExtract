@@ -1,6 +1,6 @@
 import json
 import os
-
+import re
 
 def change_work():
     setting = {"azur_lane": {},
@@ -30,7 +30,7 @@ def change_work():
         json.dump(setting, i)
 
 
-change_work()
+#change_work()
 
 
 def emm_work():
@@ -50,3 +50,6 @@ def emm_work():
         json.dump(default, file)
 
 # emm_work()
+def emm(a:str):
+    asass=a
+import wx.tools.img2img

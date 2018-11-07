@@ -3,17 +3,21 @@ import os
 import shutil
 import time
 import re
+import win32clipboard
 
+import win32con
 import wx
 
-from Classes import Threads
+from Classes import Threads, FrameClasses, noname
 from Functions import function
 
 
 class AzurLaneWork(object):
     """a class only to deal with the tex for azur lane"""
 
-    def __init__(self, form, setting, default, start_path=os.getcwd()):
+    def __init__(self, form: noname.MyFrame1, setting, default, start_path=os.getcwd()):
+
+        self.start_path = start_path
         self.form = form
 
         self.__dialog = None
@@ -29,7 +33,7 @@ class AzurLaneWork(object):
 
         self.choice = None
         try:
-            with open('files\\names.json', 'r')as file:
+            with open('%s\\files\\names.json' % self.start_path, 'r')as file:
                 self.names = json.load(file)
         except FileNotFoundError:
             self.names = {}
@@ -48,8 +52,6 @@ class AzurLaneWork(object):
 
         self.save_path = ''
         self.save_path_list = []
-
-        self.start_path = start_path
 
         self._searched_tex = []
         self._searched_mesh = []
@@ -91,7 +93,11 @@ class AzurLaneWork(object):
                                              self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path,
                                              self.setting, full=self.full, unable_restore_list=self.unable_restore_list)
 
+        self.able_add = False
         # file load method
+
+    def is_able_add(self):
+        return self.able_add
 
     def is_choice(self):
         return self.choice
@@ -105,7 +111,7 @@ class AzurLaneWork(object):
         else:
             address = os.getcwd()
         self.__dialog = wx.FileDialog(self.form, "打开", address, "AzurLane.png",
-                                      "*.PNG", style=wx.FD_MULTIPLE)
+                                      "*.PNG", style=wx.FD_MULTIPLE | wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST)
 
         if self.__dialog.ShowModal() == wx.ID_OK:
 
@@ -150,7 +156,7 @@ class AzurLaneWork(object):
         else:
             address = os.getcwd()
         self.__dialog = wx.FileDialog(self.form, "打开", address,
-                                      wildcard="*.OBJ", style=wx.FD_MULTIPLE)
+                                      wildcard="*.OBJ", style=wx.FD_MULTIPLE | wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST)
 
         if self.__dialog.ShowModal() == wx.ID_OK:
             self.form.m_staticText_mesh_load.SetLabel("开始")
@@ -296,7 +302,8 @@ class AzurLaneWork(object):
 
             self.form.m_gauge_tex_load.SetValue(25)
             self.form.m_gauge_mesh_load.SetValue(25)
-            tex_num = mesh_num = 0
+            tex_num = 0
+            mesh_num = 0
             for path in paths.keys():
                 # Mesh
                 if self.pattern_mesh.match(path) is not None:
@@ -321,8 +328,8 @@ class AzurLaneWork(object):
                     path_old = path
                     path = path.split('\\')[-1].split('.')[0]
                     if path not in self.tex_name:
-                        self.mesh_list_path_dir[path] = paths[path_old]
-                        self.mesh_name.append(path)
+                        self.tex_list_path_dir[path] = paths[path_old]
+                        self.tex_name.append(path)
                         try:
                             self.tex_name_china.append(f"{tex_num}）{self.names[path]}——{path}")
                             self._searched_tex.append(f"{self.names[path]}{path}")
@@ -380,8 +387,11 @@ class AzurLaneWork(object):
             index = self.search_unable_index[self.form.m_listBox_unable.GetSelection()]
         else:
             index = self.form.m_listBox_unable.GetSelection()
-        path = self.tex_list_path_dir[self.unable_restore_list[index]]
-        os.system("start %s" % path)
+        name = self.unable_restore_list[index]
+        show = Threads.QuickRestore(name, self.tex_list_path_dir, None, self.form,
+                                    self.start_path, full=self.full, back=1)
+        show.start()
+        # os.system("start %s" % path)
 
     def open_pass(self):
         name = ''
@@ -397,7 +407,12 @@ class AzurLaneWork(object):
         except KeyError:
             name = name[:-4] + ".PNG"
             path = self.save_path_list[1][name]
-        os.system(u"start " + path)
+
+        path = path.split("\\")[-1]
+
+        show = Threads.QuickRestore(path, self.save_path_list[1], None, self.form,
+                                    self.start_path, full=self.full, back=0)
+        show.start()
 
         # export
 
@@ -412,7 +427,7 @@ class AzurLaneWork(object):
             shutil.copy(f"{self.start_path}\\temp.png", self.save_path)
 
         self.form.m_gauge_all.SetValue(100)
-        if self.form.m_checkBox_autoopen.GetValue():
+        if self.full['auto_open']:
             os.system("start %s" % self.save_path)
 
     def export_all(self, path):
@@ -447,6 +462,8 @@ class AzurLaneWork(object):
                     num += 1
                     able_restore.remove(able)
             self.able_restore_list = able_restore
+            self.form.m_notebook_info.SetSelection(0)
+
         self.form.m_listBox_info.Clear()
         self.form.m_listBox_info.Set(self.passed_show)
 
@@ -475,7 +492,7 @@ class AzurLaneWork(object):
 
                 self.form.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable_restore_list))))
 
-            if self.form.m_checkBox_autoopen.GetValue():
+            if self.full['auto_open']:
                 os.system(self.save_path)
 
         # search
@@ -592,9 +609,9 @@ class AzurLaneWork(object):
             self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
 
         if len(self.tex_name) >= 1:
-            self.form.m_menuItem_add.Enable(True)
+            self.able_add = True
         else:
-            self.form.m_menuItem_add.Enable(False)
+            self.able_add = False
 
         return self.able_restore >= 1
 
@@ -627,3 +644,233 @@ class AzurLaneWork(object):
 
         self.pattern_tex = re.compile(self.setting['tex_limit'])
         self.pattern_mesh = re.compile(self.setting['mesh_limit'])
+
+    def update_names(self):
+        self.mesh_name_china.clear()
+        self._searched_mesh.clear()
+
+        self.tex_name_china.clear()
+        self._searched_tex.clear()
+
+        self.unable_restore_list_showed.clear()
+        self._search_unable.clear()
+
+        self.passed_show.clear()
+        self._search_skip.clear()
+
+        num = 1
+        with open("%s\\files\\names.json" % self.start_path, 'r')as file:
+            names = json.load(file)
+        self.names = names
+        for name in self.mesh_name:
+
+            try:
+                self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
+                self._searched_mesh.append(f"{self.names[name]}{name}")
+            except KeyError:
+                self.mesh_name_china.append(f"{num}）{name}——{name}")
+                self._searched_mesh.append(f"{name}")
+            num += 1
+        num = 1
+
+        for path in self.tex_name:
+
+            try:
+                self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
+                self._searched_tex.append(f"{self.names[path]}{path}")
+            except KeyError:
+                self.tex_name_china.append(f"{num}）{path}——{path}")
+                self._searched_tex.append(f"{path}")
+            num += 1
+
+        num = 1
+        for able in self.passed_list:
+
+            try:
+                self.passed_show.append('%s——%s,第%d个' % (self.names[able], able, num))
+            except KeyError:
+                self.passed_show.append('%s——%s,第%d个' % (able, able, num))
+            try:
+                self._search_skip.append(f"{able}{self.names[able]}")
+            except KeyError:
+                self._search_skip.append(f"{able}{able}")
+            num += 1
+        num = 1
+        for name in self.unable_restore_list:
+
+            try:
+                self.unable_restore_list_showed.append("%d） %s" % (num, self.names[name]))
+            except KeyError:
+                self.unable_restore_list_showed.append("%d） %s" % (num, name))
+            try:
+                self._search_unable.append(f"{name}{self.names[name]}")
+            except KeyError:
+                self._search_unable.append(f"{name}{name}")
+
+        self.form.m_listBox_mesh.Set(self.mesh_name_china)
+        self.form.m_listBox_tex.Set(self.tex_name_china)
+        self.form.m_listBox_info.Set(self.passed_show)
+        self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
+
+
+class AddDialog(object):
+    def __init__(self, parent: noname.MyDialog_Setting, name_list, names, start_path):
+
+        self.parent = parent
+        self.name_list = name_list
+        self.need_add = []
+        self.need_add_show = []
+        self.finish_num = 0
+
+        self.start_path = start_path
+
+        self.names = names
+
+    def get_new_dic(self):
+        return self.names
+
+
+    def show_info(self):
+        for name in self.name_list:
+            if name not in self.names.keys():
+                self.need_add.append(name)
+                self.need_add_show.append("%s: " % name)
+
+        self.parent.m_listBox_new.Set(self.need_add_show)
+
+    def open_add_name(self):
+        index = self.parent.m_listBox_new.GetSelection()
+        value = self.need_add[index]
+        if value in self.names.keys():
+            value_cn = self.names[value]
+        else:
+            value_cn = ''
+
+        writer = FrameClasses.Writer(self.parent, value, value_cn)
+        writer.ShowModal()
+        if writer.is_able():
+            name = writer.GetValue()
+            if name != '':
+                self.finish_num += 1
+            elif value in self.names.keys() and name == '':
+                self.finish_num -= 1
+            self.names[value] = name
+            self.need_add_show[index] = "%s：%s" % (self.need_add[index], name)
+
+            self.parent.m_listBox_new.SetString(index, self.need_add_show[index])
+        scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
+        self.parent.m_gauge5.SetValue(scale)
+
+
+class Compare:
+    def __init__(self, parent: noname.MyDialog_Setting):
+        self.frame = parent
+        self.thread = Threads.CompareThread(self)
+
+        self.old_fold = ''
+        self.new_fold = ''
+
+        self.old_fold_list = []
+        self.new_fold_list = []
+
+        self._new_add = []
+        self._new_add_show = []
+
+    def writer_into(self):
+        index = self.frame.m_listBox_deffer.GetSelection()
+
+        info = self._new_add[index]
+
+        win32clipboard.OpenClipboard()
+
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, info)
+        win32clipboard.CloseClipboard()
+
+    def test(self):
+        if self.frame.m_dirPicker6.GetPath() != '':
+            self.new_fold = self.frame.m_dirPicker6.Path
+            self.new_fold_list = function.all_file_path(self.new_fold)
+        if self.frame.m_dirPicker_old.GetPath() != '':
+            self.old_fold = self.frame.m_dirPicker_old.GetPath()
+            self.old_fold_list = function.all_file_path(self.old_fold)
+
+        if self.new_fold != '' and self.old_fold != '':
+            self.start()
+
+    def start(self):
+        self.thread.start()
+
+
+class ChangeName:
+    def __init__(self, parent: noname.MyDialog_Setting, start_path):
+        self.frame = parent
+
+        self.start_path = start_path
+
+        with open("%s\\files\\names.json" % self.start_path, 'r')as file:
+            self.names = json.load(file)
+
+        self.show_list = []
+        self.key_list = []
+        self.searched_list = []
+
+        self.searched_show = []
+        self.search_list = []
+
+        self.searched = False
+
+    def show_all(self):
+        num = 0
+        for index in self.names.keys():
+            num += 1
+            self.show_list.append("%d）\t%s：%s" % (num, index, self.names[index]))
+            self.key_list.append(index)
+            self.searched_list.append("%s%s" % (index, self.names[index]))
+        self.frame.m_listBox_change.Clear()
+        self.frame.m_listBox_change.Set(self.show_list)
+
+    def change_name(self):
+        index = self.frame.m_listBox_change.GetSelection()
+        if not self.searched:
+            name = self.key_list[index]
+        else:
+            name = self.search_list[index]
+        name_cn = self.names[name]
+
+        writer = FrameClasses.Writer(self.frame, name, name_cn)
+        writer.ShowModal()
+        if writer.is_able():
+            name_cn = writer.GetValue()
+
+            self.names[name] = name_cn
+
+            self.show_list[index] = "%d）\t%s：%s" % (index + 1, self.key_list[index], self.names[self.key_list[index]])
+            self.key_list[index] = name
+
+            self.frame.m_listBox_change.SetString(index, self.show_list[index])
+
+    def searching(self):
+        value = self.frame.m_searchCtrl2.GetValue()
+        if value != '':
+            self.searched = True
+            indexes = function.find(value, self.searched_list)
+
+            self.searched_show.clear()
+
+            self.search_list.clear()
+
+            for index in indexes:
+                self.searched_show.append(self.show_list[index])
+                self.search_list.append(self.key_list[index])
+
+        else:
+            self.searched_show = self.show_list.copy()
+            self.search_list = self.key_list.copy()
+            self.searched = False
+        self.frame.m_listBox_change.Clear()
+        self.frame.m_listBox_change.Set(self.searched_show)
+
+    def get_change(self):
+        return self.names
+

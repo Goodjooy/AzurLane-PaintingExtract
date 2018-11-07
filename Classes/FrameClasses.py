@@ -1,13 +1,11 @@
 import json
 import os
 import time
-import win32clipboard
+from threading import Thread
 
-import win32con
 import wx
 
-from Classes import noname, WorkClasses
-from Functions import function
+from Classes import noname, WorkClasses, Threads
 
 
 class CaleFrame(noname.MyFrame1):
@@ -23,9 +21,6 @@ class CaleFrame(noname.MyFrame1):
             self.SetIcon(icon)
 
         self.start_path = os.getcwd()
-
-        self.names = {}
-
 
         with open("files\\setting.json", 'r')as file:
             setting_dic = json.load(file)
@@ -43,9 +38,15 @@ class CaleFrame(noname.MyFrame1):
         with open("files\\default.json", 'r')as file:
             self.default = json.load(file)
 
-        self.azur_lane = WorkClasses.AzurLaneWork(self, setting=self.setting_self, default=self.default)
+        self.azur_lane = WorkClasses.AzurLaneWork(self, setting=self.setting_self, default=self.default,
+                                                  start_path=self.start_path)
 
         self.m_button_gui.Enable(False)
+
+        self.setting_page = 0
+
+        self.m_notebook_info.SetSelection(0)
+        self.m_listbook_in.SetSelection(0)
 
     # file load method
     # azur lane
@@ -80,7 +81,7 @@ class CaleFrame(noname.MyFrame1):
 
     # export
     def export_choice(self, event):
-        if self.azur_lane_type and self.azur_lane.is_choice() is not None:
+        if self.azur_lane.is_choice() is not None:
             self.azur_lane.export_choice()
 
     def export_all(self, event):
@@ -96,36 +97,17 @@ class CaleFrame(noname.MyFrame1):
         if dialog.ShowModal() == wx.ID_OK:
             temp = dialog.GetPath()
 
-            if self.azur_lane_type and self.azur_lane.is_able():
+            if self.azur_lane.is_able():
                 self.azur_lane.export_all(temp)
 
         else:
             pass
 
     def copy_file(self, event):
-        if self.azur_lane_type:
-            self.azur_lane.copy_file()
+
+        self.azur_lane.copy_file()
 
     # tools
-
-    def add_new(self, event):
-        dialog = AddDialog(self, self.azur_lane.tex_name, self.names, self.start_path)
-
-        if dialog.ShowModal() == 0:
-            with open(self.start_path + '\\files\\names.json', 'r')as file:
-                self.names = json.load(file)
-
-    def compare(self, event):
-        compare = CompareDialog(self)
-
-        if compare.ShowModal() == 0:
-            pass
-
-    def change_name(self, event):
-        dialog = ChangeNameDialog(self, self.start_path)
-        if dialog.ShowModal() == 0:
-            with open(self.start_path + '\\files\\names.json', 'r')as file:
-                self.names = json.load(file)
 
     # search
     def search_mesh(self, event):
@@ -150,19 +132,6 @@ class CaleFrame(noname.MyFrame1):
 
         self.exit()
 
-    def azurlane_type(self, event):
-        type_bool = not self.azur_lane_type
-        self.m_menuItem_azurlane.Check(type_bool)
-        self.azur_lane_type = type_bool
-        self.__azur_lane_load(type_bool)
-
-    def __azur_lane_load(self, open_able):
-        self.m_menuItem_tex.Enable(open_able)
-        self.m_menuItem_mesh.Enable(open_able)
-        self.m_menuItem_mix.Enable(open_able)
-        self.m_menuItem_meshonly.Enable(open_able)
-        self.m_menuItem_texonly.Enable(open_able)
-
     def exit(self):
         with open("%s\\files\\setting.json" % self.start_path, 'w')as file_save:
             json.dump(self.setting_self, file_save)
@@ -180,7 +149,8 @@ class CaleFrame(noname.MyFrame1):
             else:
                 pass
         else:
-            message = wx.MessageBox("确认退出？", "提示", wx.YES_NO)
+
+            message = wx.MessageBox("确认退出？", "提示", wx.YES_NO, )
             if message == wx.YES:
                 self.Destroy()
             elif message == wx.CANCEL:
@@ -194,10 +164,14 @@ class CaleFrame(noname.MyFrame1):
         dialog.Show()
 
     def setting(self, event):
-        dialog = Setting(self, self.setting_self, self.default, self.start_path)
+        dialog = Setting(self, self.setting_self, self.default, self.start_path, self.azur_lane.tex_name,
+                         self.azur_lane.names, self.start_path, self.azur_lane.is_able_add(), self.setting_page)
         temp = dialog.ShowModal()
         if temp == 0:
             if dialog.IsChange:
+                thread = Threads.BackInfo(self.azur_lane)
+                thread.start()
+
                 setting_dic = dialog.GetValue()
                 self.default = dialog.GetDefault()
                 self.setting_self = setting_dic
@@ -212,62 +186,7 @@ class CaleFrame(noname.MyFrame1):
 
                 self.azur_lane.update_setting(self.setting_self, self.default)
 
-
-class AddDialog(noname.MyDialog_add_new):
-    def __init__(self, parent, name_list, names, start_path):
-        noname.MyDialog_add_new.__init__(self, parent)
-
-        self.name_list = name_list
-        self.need_add = []
-        self.need_add_show = []
-        self.finish_num = 0
-
-        self.start_path = start_path
-
-        self.names = names
-
-    def save_new_dic(self, event):
-        with open(self.start_path + "\\files\\names.json", 'w')as file:
-            json.dump(self.names, file)
-        self.Destroy()
-
-    def show_info(self, event):
-        for name in self.name_list:
-            if name not in self.names.keys():
-                self.need_add.append(name)
-                self.need_add_show.append("%s: " % name)
-
-        self.m_listBox5.Set(self.need_add_show)
-
-    def open_add_name(self, event):
-        index = self.m_listBox5.GetSelection()
-        value = self.need_add[index]
-        if value in self.names.keys():
-            value_cn = self.names[value]
-        else:
-            value_cn = ''
-
-        writer = Writer(self, value, value_cn)
-        bool_er = writer.ShowModal()
-        if bool_er == 0:
-            name = writer.GetValue()
-            if name != '':
-                self.finish_num += 1
-            elif value in self.names.keys() and name == '':
-                self.finish_num -= 1
-            self.names[value] = name
-            self.need_add_show[index] = "%s：%s" % (self.need_add[index], name)
-
-            self.m_listBox5.Clear()
-            self.m_listBox5.Set(self.need_add_show)
-        scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
-        self.m_gauge5.SetValue(scale)
-
-    def close_save(self, event):
-
-        with open(self.start_path + "\\files\\names.json", 'w')as file:
-            json.dump(self.names, file)
-        self.Destroy()
+        self.setting_page = dialog.setting_select
 
 
 class Writer(noname.MyDialog_enter_name):
@@ -277,6 +196,7 @@ class Writer(noname.MyDialog_enter_name):
 
         self.name = name
         self.name_cn = name_cn
+        self.old = name_cn
 
     def show_name(self, event):
         self.m_staticText8.SetLabel("%s: " % self.name)
@@ -286,158 +206,22 @@ class Writer(noname.MyDialog_enter_name):
         self.name_cn = self.m_textCtrl2.GetValue()
         self.Destroy()
 
+    def is_able(self):
+        return not self.old == self.name_cn
+
     def GetValue(self):
         return self.name_cn
-
-
-class CompareDialog(noname.MyDialog_compare):
-    def __init__(self, parent):
-        noname.MyDialog_compare.__init__(self, parent)
-
-        self.old_fold = ''
-        self.new_fold = ''
-
-        self.old_fold_list = []
-        self.new_fold_list = []
-
-        self._new_add = []
-        self._new_add_show = []
-
-    def close_the_tool(self, event):
-        self.Destroy()
-
-    def writer_into(self, event):
-        index = self.m_listBox9.GetSelection()
-
-        info = self._new_add[index]
-
-        win32clipboard.OpenClipboard()
-
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, info)
-        win32clipboard.CloseClipboard()
-
-    def test(self, event):
-        if self.m_dirPicker6.GetPath() != '':
-            self.new_fold = self.m_dirPicker6.Path
-            self.new_fold_list = function.all_file_path(self.new_fold)
-        if self.m_dirPicker_old.GetPath() != '':
-            self.old_fold = self.m_dirPicker_old.GetPath()
-            self.old_fold_list = function.all_file_path(self.old_fold)
-
-        if self.new_fold != '' and self.old_fold != '':
-            self.compare()
-
-            self.m_timer2.Stop()
-
-    def compare(self):
-        num = 0
-        for name in self.old_fold_list[0]:
-            name_old = name
-            name = name[len(self.old_fold) + 1:]
-            name = "%s\\%s" % (self.new_fold, name)
-
-            if name not in self.new_fold_list[0]:
-                num += 1
-                if name not in self._new_add:
-                    self._new_add.append(name_old)
-                    self._new_add_show.append("%d） %s" % (num, name_old))
-                    self.m_listBox9.Clear()
-                    self.m_listBox9.Set(self._new_add_show)
-
-
-class ChangeNameDialog(noname.MyDialog_change_name):
-    def __init__(self, parent, start_path):
-        noname.MyDialog_change_name.__init__(self, parent)
-
-        self.start_path = start_path
-
-        with open("%s\\files\\names.json" % self.start_path, 'r')as file:
-            self.names = json.load(file)
-
-        self.show_list = []
-        self.key_list = []
-        self.searched_list = []
-
-        self.searched_show = []
-        self.search_list = []
-
-        self.searched = False
-
-    def show_all(self, event):
-        num = 0
-        for index in self.names.keys():
-            num += 1
-            self.show_list.append("%d）\t%s：%s" % (num, index, self.names[index]))
-            self.key_list.append(index)
-            self.searched_list.append("%s%s" % (index, self.names[index]))
-        self.m_listBox7.Clear()
-        self.m_listBox7.Set(self.show_list)
-
-    def change_name(self, event):
-        index = self.m_listBox7.GetSelection()
-        if not self.searched:
-            name = self.key_list[index]
-        else:
-            name = self.search_list[index]
-        name_cn = self.names[name]
-
-        writer = Writer(self, name, name_cn)
-
-        if writer.ShowModal() == 0:
-            name_cn = writer.GetValue()
-
-            self.names[name] = name_cn
-            num = 0
-            self.show_list.clear()
-            self.key_list.clear()
-            for index in self.names.keys():
-                num += 1
-                self.show_list.append("%d）\t%s：%s" % (num, index, self.names[index]))
-                self.key_list.append(index)
-            self.m_listBox7.Clear()
-            self.m_listBox7.Set(self.show_list)
-
-    def searching(self, event):
-        value = self.m_searchCtrl2.GetValue()
-        if value != '':
-            indexes = function.find(value, self.searched_list)
-            self.searched_show.clear()
-            self.search_list.clear()
-            for index in indexes:
-                self.searched_show.append(self.show_list[index])
-                self.search_list.append(self.key_list[index])
-
-        else:
-            self.searched_show = self.show_list
-            self.search_list = self.key_list
-        self.searched = True
-        self.m_listBox7.Clear()
-        self.m_listBox7.Set(self.searched_show)
-
-    def save_change(self, event):
-        with open(f"{self.start_path}\\files\\names.json", 'w')as file:
-            json.dump(self.names, file)
-
-        self.Destroy()
-
-    def close_save(self, event):
-        with open(f"{self.start_path}\\files\\names.json", 'w')as file:
-            json.dump(self.names, file)
-
-        self.Destroy()
 
 
 class Setting(noname.MyDialog_Setting):
     lock: bool
 
-    def __init__(self, parent, setting_dic, default, def_path):
+    def __init__(self, parent, setting_dic, default, def_path, name_list, names, start_path, able_add, setting_select):
         super().__init__(parent=parent)
 
         self.path = def_path
         temp = wx.Image('%s\\files\\bg_story_litang.png' % self.path, wx.BITMAP_TYPE_PNG)
         temp = temp.ConvertToBitmap()
-        print(self.m_bitmap2.GetSize())
         self.m_bitmap2.SetBitmap(temp)
 
         self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
@@ -464,9 +248,6 @@ class Setting(noname.MyDialog_Setting):
         self.azur_lane_default_tex_dir = self.default["azur_lane"]['default_tex_dir']
         self.azur_lane_default_mesh_dir = self.default["azur_lane"]['default_mesh_dir']
 
-        self.girl_line_default_rgb_dir = self.default["girl_line"]['default_rgb_dir']
-        self.girl_line_default_alpha_dir = self.default["girl_line"]['default_alpha_dir']
-
         self.IsChange = False
         self.lock = self.default["lock"]
         self.export = self.default["export"]
@@ -488,6 +269,22 @@ class Setting(noname.MyDialog_Setting):
 
         self.tex_work = False
         self.mesh_work = False
+
+        self.add_new_name = WorkClasses.AddDialog(self, name_list, names, start_path)
+        self.change_name_cn = WorkClasses.ChangeName(self, start_path)
+        self.compare = WorkClasses.Compare(self)
+
+        self.able_add = able_add
+        self.able_work()
+        self.setting_select = setting_select
+
+        self.m_notebook3.SetSelection(self.setting_select)
+
+        self.m_radioBox_im.Enable(False)
+
+        self.names = {}
+
+        self.start = start_path
 
     def ok_click(self, event):
         self.change_work()
@@ -520,6 +317,8 @@ class Setting(noname.MyDialog_Setting):
 
         self.change_div(event)
 
+        self.change_name_cn.show_all()
+
     def change_work(self):
         self.setting["azur_lane"]["div_type"] = self.m_radioBox_az_div.GetSelection()
         self.setting["azur_lane"]["export_type"] = self.m_radioBox_az_type.GetSelection()
@@ -544,6 +343,21 @@ class Setting(noname.MyDialog_Setting):
             self.default["azur_lane"]['default_mesh_dir'] = self.m_dirPicker_az_mesh_dir.GetPath()
 
             self.default['export'] = self.m_dirPicker_export.GetPath()
+
+        key_change = self.change_name_cn.get_change()
+        key_add = self.add_new_name.get_new_dic()
+
+        self.names = key_add
+        for key_add_per in key_change.keys():
+            if self.names[key_add_per] != key_change[key_add_per]:
+                self.names[key_add_per] = key_change[key_add_per]
+            else:
+                continue
+
+        with open(self.start + "\\files\\names.json", 'w')as file:
+            json.dump(self.names, file)
+
+        self.setting_select = self.m_notebook3.GetSelection()
 
     def lock_address(self, event):
         self.IsChange = True
@@ -690,11 +504,40 @@ class Setting(noname.MyDialog_Setting):
         else:
             self.m_bpButton_defualt_tex.Enable(True)
 
+    def open_add_name(self, event):
+        self.change(event)
+        self.add_new_name.open_add_name()
+
+    def change_name(self, event):
+        self.change(event)
+        self.change_name_cn.change_name()
+
+    def searching(self, event):
+        self.change(event)
+        self.change_name_cn.searching()
+
+    def add_new(self, event):
+        self.change(event)
+        self.compare.test()
+
+    def add_old(self, event):
+        self.change(event)
+        self.compare.test()
+
+    def writer_into(self, event):
+        self.compare.writer_into()
+
+    def change_page(self, event):
+        self.setting_select = self.m_notebook3.GetSelection()
+
     def GetValue(self):
         return self.setting
 
     def GetDefault(self):
         return self.default
+
+    def GetNames(self):
+        return self.add_new_name.names
 
     def az_show(self, event):
         self.m_radioBox_az_div.SetSelection(self.azur_lane_div_type)
@@ -739,7 +582,7 @@ class Setting(noname.MyDialog_Setting):
             self.m_checkList_az_limits.Enable(False)
 
             ####
-            self.m_radioBox_az_type.Enable(True)
+
             self.m_radioBox_az_div.Enable(True)
 
             self.change_div(event=event)
@@ -773,7 +616,7 @@ class Setting(noname.MyDialog_Setting):
             self.m_checkList_az_limits.Enable(True)
 
             ####
-            self.m_radioBox_az_type.Enable(False)
+
             self.m_radioBox_az_div.Enable(False)
 
             self.reset_az_pattern()
@@ -787,6 +630,15 @@ class Setting(noname.MyDialog_Setting):
             value = self.azur_lane_divide_list[value]
             self.az_div_list.append(
                 '%s)%s:\t%s' % (val_key, value['dir'], value['pattern']))
+
+    def able_work(self):
+        if not self.able_add:
+            self.m_listBox_new.Enable(False)
+            self.m_gauge5.Enable(False)
+        else:
+            self.m_listBox_new.Enable(True)
+            self.m_gauge5.Enable(True)
+            self.add_new_name.show_info()
 
 
 class AddPattern(noname.MyDialog_limit):
