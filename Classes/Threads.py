@@ -98,6 +98,7 @@ class RestoreThread(threading.Thread):
 
                 os.makedirs(save_path, exist_ok=True)
 
+
                 function.restore_tool(name, names, self.mesh_list_path_dir, self.tex_list_path_dir, save_path)
 
                 val_percent = str(round(100 * (self.index / len(self.list)), 2))
@@ -132,7 +133,7 @@ class RestoreThread(threading.Thread):
             os.system(r"start %s" % self.save_path)
 
         if self.full['finish_exit']:
-            self.format.exit()
+            self.format.exit(True)
 
     def stop_(self, stop: bool):
         self.stop = stop

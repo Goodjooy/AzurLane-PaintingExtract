@@ -1,6 +1,6 @@
 import json
 import os
-import re
+
 
 def change_work():
     setting = {"azur_lane": {},
@@ -52,4 +52,5 @@ def emm_work():
 # emm_work()
 def emm(a:str):
     asass=a
-import wx.tools.img2img
+a=(1,2)
+a[1]=1

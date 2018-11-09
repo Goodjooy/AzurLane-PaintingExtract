@@ -1,3 +1,4 @@
+import PIL.Image
 import json
 import os
 import shutil
@@ -9,16 +10,23 @@ import win32con
 import wx
 
 from Classes import Threads, FrameClasses, noname
-from Functions import function
+from Functions import function, tools
 
 
-class AzurLaneWork(object):
+class BaseWorkClass:
+    def __init__(self, frame):
+        self.frame = frame
+
+
+class PaintingWork(BaseWorkClass):
     """a class only to deal with the tex for azur lane"""
 
     def __init__(self, form: noname.MyFrame1, setting, default, start_path=os.getcwd()):
 
+        super(PaintingWork, self).__init__(form)
+
         self.start_path = start_path
-        self.form = form
+        self.form = self.frame
 
         self.__dialog = None
 
@@ -106,6 +114,7 @@ class AzurLaneWork(object):
         return self.able_restore_list != []
 
     def load_tex(self):
+        self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
             address = self.default['default_tex_dir']
         else:
@@ -118,39 +127,18 @@ class AzurLaneWork(object):
             self.form.m_staticText_load_tex.SetLabel("开始")
             self.form.m_gauge_tex_load.SetValue(0)
             paths = self.__dialog.GetPaths()
-            if not len(paths) == 0:
-                num = 0
-                for path in paths:
-                    num += 1
-                    if self.pattern_tex.match(path) is not None:
-                        name = path.split('\\')[-1].split('.')[0]
-                    else:
-                        continue
-
-                    if name not in self.tex_name:
-                        self.tex_name.append(name)
-                        self.tex_list_path_dir[name] = path
-                        try:
-                            self.tex_name_china.append(f"{num}）{self.names[name]}——{name}")
-                            self._searched_tex.append(f"{self.names[name]}{name}")
-                        except KeyError:
-                            self.tex_name_china.append(f"{num}）{name}——{name}")
-                            self._searched_tex.append(f"{name}")
-
-                    self.form.m_gauge_tex_load.SetValue(function.re_int(100 * (num / len(paths))))
+            returned = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                       self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, True, '',
+                                       self.names)
+            if returned:
+                self.form.m_gauge_tex_load.SetValue(100)
                 self.form.m_staticText_load_tex.SetLabel("完成")
-            self.form.m_listBox_tex.Set(self.tex_name_china)
+                self.form.m_listBox_tex.Set(self.tex_name_china)
 
-        if self.able_export():
-            self.form.m_menuItem_all.Enable(True)
-        else:
-            self.form.m_menuItem_all.Enable(False)
-        if len(self.unable_restore_list) >= 1:
-            self.form.m_menuItem_copy_only.Enable(True)
-        else:
-            self.form.m_menuItem_copy_only.Enable(False)
+        self.info_check()
 
     def load_mesh(self):
+        self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
             address = self.default['default_mesh_dir']
         else:
@@ -162,40 +150,19 @@ class AzurLaneWork(object):
             self.form.m_staticText_mesh_load.SetLabel("开始")
             self.form.m_gauge_mesh_load.SetValue(0)
             paths = self.__dialog.GetPaths()
-            if not len(paths) == 0:
-                num = 0
-                for path in paths:
+            returned = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                       self.mesh_list_path_dir, self.full['clear_list'],
+                                       self.pattern_mesh, True, "-mesh", self.names)
 
-                    num += 1
-                    if self.pattern_mesh.match(path) is not None:
-                        name = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
-                    else:
-                        continue
-
-                    if name not in self.mesh_name:
-                        self.mesh_list_path_dir[name] = path
-                        self.mesh_name.append(name)
-                        try:
-                            self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
-                            self._searched_mesh.append(f"{self.names[name]}{name}")
-                        except KeyError:
-                            self.mesh_name_china.append(f"{num}）{name}——{name}")
-                            self._searched_mesh.append(f"{name}")
-
-                    self.form.m_gauge_tex_load.SetValue(function.re_int(100 * (num / len(paths))))
+            if returned:
+                self.form.m_gauge_mesh_load.SetValue(function.re_int(100))
                 self.form.m_staticText_mesh_load.SetLabel("完成")
+                self.form.m_listBox_mesh.Set(self.mesh_name_china)
 
-        self.form.m_listBox_mesh.Set(self.mesh_name_china)
-        if self.able_export():
-            self.form.m_menuItem_all.Enable(True)
-        else:
-            self.form.m_menuItem_all.Enable(False)
-        if len(self.unable_restore_list) >= 1:
-            self.form.m_menuItem_copy_only.Enable(True)
-        else:
-            self.form.m_menuItem_copy_only.Enable(False)
+        self.info_check()
 
     def load_mesh_fold(self):
+        self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
             address = self.default['default_mesh_dir']
         else:
@@ -211,37 +178,17 @@ class AzurLaneWork(object):
             self.form.m_gauge_mesh_load.SetValue(0)
 
             paths = function.all_file_path(paths)[1]
-            self.form.m_gauge_mesh_load.SetValue(25)
-            num = 0
-            for path in paths.keys():
-                if self.pattern_mesh.match(path) is not None:
-                    name = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
-                else:
-                    continue
-                if name not in self.mesh_name:
-                    self.mesh_list_path_dir[name] = paths[path]
-                    self.mesh_name.append(name)
-                    try:
-                        self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
-                        self._searched_mesh.append(f"{self.names[name]}{name}")
-                    except KeyError:
-                        self.mesh_name_china.append(f"{num}）{name}——{name}")
-                        self._searched_mesh.append(f"{name}")
-
-                num += 1
-                self.form.m_gauge_mesh_load.SetValue(25 + function.re_int(75 * (num / len(paths.keys()))))
-            self.form.m_staticText_mesh_load.SetLabel("完成")
-            self.form.m_listBox_mesh.Set(self.mesh_name_china)
-        if self.able_export():
-            self.form.m_menuItem_all.Enable(True)
-        else:
-            self.form.m_menuItem_all.Enable(False)
-        if len(self.unable_restore_list) >= 1:
-            self.form.m_menuItem_copy_only.Enable(True)
-        else:
-            self.form.m_menuItem_copy_only.Enable(False)
+            returned = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                       self.mesh_list_path_dir, self.full['clear_list'],
+                                       self.pattern_mesh, False, "-mesh", self.names)
+            if returned:
+                self.form.m_gauge_mesh_load.SetValue(100)
+                self.form.m_staticText_mesh_load.SetLabel("完成")
+                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+        self.info_check()
 
     def load_tex_fold(self):
+        self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
             address = self.default['default_tex_dir']
         else:
@@ -256,39 +203,18 @@ class AzurLaneWork(object):
             paths = self.__dialog.GetPath()
 
             paths = function.all_file_path(paths)[1]
-            self.form.m_gauge_tex_load.SetValue(25)
-            num = 0
-            for path in paths.keys():
-                path_old = path
-                if self.pattern_tex.match(path) is not None:
-                    path = path.split('\\')[-1].split('.')[0]
-                else:
-                    continue
+            returned = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                       self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False, '',
+                                       self.names)
+            if returned:
+                self.form.m_gauge_tex_load.SetValue(100)
+                self.form.m_staticText_load_tex.SetLabel("完成")
+                self.form.m_listBox_tex.Set(self.tex_name_china)
 
-                if path not in self.tex_name:
-                    self.tex_list_path_dir[path] = paths[path_old]
-                    self.tex_name.append(path)
-                    try:
-                        self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
-                        self._searched_tex.append(f"{self.names[path]}{path}")
-                    except KeyError:
-                        self.tex_name_china.append(f"{num}）{path}——{path}")
-                        self._searched_tex.append(f"{path}")
-                num += 1
-                self.form.m_gauge_tex_load.SetValue(25 + function.re_int(75 * (num / len(paths.keys()))))
-        self.form.m_staticText_load_tex.SetLabel("完成")
-
-        self.form.m_listBox_tex.Set(self.tex_name_china)
-        if self.able_export():
-            self.form.m_menuItem_all.Enable(True)
-        else:
-            self.form.m_menuItem_all.Enable(False)
-        if len(self.unable_restore_list) >= 1:
-            self.form.m_menuItem_copy_only.Enable(True)
-        else:
-            self.form.m_menuItem_copy_only.Enable(False)
+        self.info_check()
 
     def load_tex_and_mesh(self):
+        self.form.m_gauge_tex_load.SetValue(0)
         self.__dialog = wx.DirDialog(self.form, "打开", os.getcwd(),
                                      style=wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR | wx.DD_DEFAULT_STYLE |
                                            wx.DD_DIR_MUST_EXIST)
@@ -300,63 +226,23 @@ class AzurLaneWork(object):
 
             paths = function.all_file_path(paths)[1]
 
-            self.form.m_gauge_tex_load.SetValue(25)
-            self.form.m_gauge_mesh_load.SetValue(25)
-            tex_num = 0
-            mesh_num = 0
-            for path in paths.keys():
-                # Mesh
-                if self.pattern_mesh.match(path) is not None:
-                    path_old = path
-                    path = path.split('\\')[-1].split('.')[0].replace('-mesh', '')
+            returned_tex = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                           self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False, '',
+                                           self.names, start=0)
 
-                    if path not in self.mesh_name:
-                        self.mesh_list_path_dir[path] = paths[path_old]
-                        self.mesh_name.append(path)
-                        try:
-                            self.mesh_name_china.append(f"{mesh_num}）{self.names[path]}——{path}")
-                            self._searched_mesh.append(f"{self.names[path]}{path}")
-                        except KeyError:
-                            self.mesh_name_china.append(f"{mesh_num}）{path}——{path}")
-                            self._searched_mesh.append(f"{path}")
+            returned_mesh = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                            self.mesh_list_path_dir, self.full['clear_list'],
+                                            self.pattern_mesh, False, "-mesh", self.names, start=0)
+            if returned_tex:
+                self.form.m_gauge_tex_load.SetValue(100)
+                self.form.m_staticText_load_tex.SetLabel("完成")
+                self.form.m_listBox_tex.Set(self.tex_name_china)
+            if returned_mesh:
+                self.form.m_gauge_mesh_load.SetValue(100)
+                self.form.m_staticText_mesh_load.SetLabel("完成")
+                self.form.m_listBox_mesh.Set(self.mesh_name_china)
 
-                    mesh_num += 1
-                    self.form.m_gauge_mesh_load.SetValue(25 + function.re_int(75 * (mesh_num / len(paths.keys()))))
-
-                # texture2D
-                elif self.pattern_tex.match(path) is not None:
-                    path_old = path
-                    path = path.split('\\')[-1].split('.')[0]
-                    if path not in self.tex_name:
-                        self.tex_list_path_dir[path] = paths[path_old]
-                        self.tex_name.append(path)
-                        try:
-                            self.tex_name_china.append(f"{tex_num}）{self.names[path]}——{path}")
-                            self._searched_tex.append(f"{self.names[path]}{path}")
-                        except KeyError:
-                            self.tex_name_china.append(f"{tex_num}）{path}——{path}")
-                            self._searched_tex.append(f"{path}")
-                    tex_num += 1
-                    self.form.m_gauge_tex_load.SetValue(25 + function.re_int(75 * (tex_num / len(paths.keys()))))
-                else:
-                    continue
-
-            self.form.m_gauge_tex_load.SetValue(100)
-            self.form.m_gauge_mesh_load.SetValue(100)
-
-            self.form.m_listBox_tex.Set(self.tex_name_china)
-            self.form.m_listBox_mesh.Set(self.mesh_name_china)
-        if self.able_export():
-            self.form.m_menuItem_all.Enable(True)
-        else:
-            self.form.m_menuItem_all.Enable(False)
-
-        if len(self.unable_restore_list) >= 1:
-            self.form.m_menuItem_copy_only.Enable(True)
-        else:
-            self.form.m_menuItem_copy_only.Enable(False)
-
-        # choice
+        self.info_check()
 
     # choice
     def mesh_choice(self):
@@ -553,12 +439,12 @@ class AzurLaneWork(object):
                 self.search_skip_show.append(self.passed_show[index])
                 self.search_pass_index.append(index)
 
-            self.form.m_listBox_info.Clear()
-            self.form.m_listBox_info.Set(self.search_skip_show)
+            self.form.m_listBox_skip.Clear()
+            self.form.m_listBox_skip.Set(self.search_skip_show)
         else:
             self.skip_search = False
-            self.form.m_listBox_info.Clear()
-            self.form.m_listBox_info.Set(self.passed_show)
+            self.form.m_listBox_skip.Clear()
+            self.form.m_listBox_skip.Set(self.passed_show)
 
     def search_unable(self):
         value = self.form.m_searchCtrl_unable.GetValue()
@@ -583,6 +469,7 @@ class AzurLaneWork(object):
 
         # else
 
+    # else
     def able_export(self):
         for name in self.mesh_name:
             if name in self.tex_name:
@@ -709,11 +596,98 @@ class AzurLaneWork(object):
 
         self.form.m_listBox_mesh.Set(self.mesh_name_china)
         self.form.m_listBox_tex.Set(self.tex_name_china)
-        self.form.m_listBox_info.Set(self.passed_show)
+        self.form.m_listBox_skip.Set(self.passed_show)
         self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
 
+    def info_check(self):
+        if self.able_export():
+            self.form.m_menuItem_all.Enable(True)
+        else:
+            self.form.m_menuItem_all.Enable(False)
 
-class AddDialog(object):
+        if len(self.unable_restore_list) >= 1:
+            self.form.m_menuItem_copy_only.Enable(True)
+        else:
+            self.form.m_menuItem_copy_only.Enable(False)
+
+
+class SpineDivideWork(BaseWorkClass):
+    def __init__(self, frame:noname.MyFrame1, start_path=os.getcwd()):
+        super(SpineDivideWork, self).__init__(frame)
+
+        self.path = start_path
+
+        self.dialog = wx.Dialog
+
+        self.pattern = r'\n.+?\n\s{2}rotate: .+?\n\s{2}xy: \d+?, \d+?\n\s{2}size: \d+?, \d+?\n\s{2}orig: \d+?, \d+?\n\s{2}offset: \d+?, \d+?\n {2}index: \d+?'
+
+        self.cuter = ''
+
+        self.body: PIL.Image = None
+
+        self.bodies = []
+
+    def need_work(self):
+
+        if self.body is not None and len(self.cuter) >= 1:
+            self.work()
+
+    def load_body(self):
+        self.dialog = wx.FileDialog(self.frame, 'body', os.getcwd(), '', "*.png",
+                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            self.body = function.body_enter(self.dialog.GetFilename())
+
+            self.need_work()
+
+    def load_cuter(self):
+        self.dialog = wx.FileDialog(self.frame, 'divide', os.getcwd(), '', "*.atlas.txt",
+                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
+        if self.dialog.ShowModal() == wx.ID_OK:
+            with open(self.dialog.GetFilename(), 'r')as file:
+                self.cuter = file.read()
+
+            self.need_work()
+
+    def work(self):
+        pattern = re.compile(r'.+?\.png\nsize: \d+,\d+\nformat: \w+\nfilter: Linear,Linear\nrepeat: none')
+        cuter = pattern.findall(self.cuter)
+
+        cuter = cuter[0].replace('\\n', '\n')
+
+        name = re.findall(r'.+\.png', cuter)[0]
+        name = os.path.basename(name)
+
+        self.cuter = self.cuter.replace(cuter, '')
+
+        pattern = re.compile(r'\w+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+')
+        bodies = pattern.findall(self.cuter)
+        root = self.frame.m_treeCtrl_boys.AddRoot(name)
+        for body in bodies:
+            body = body.split("\n  ")
+
+            pattern = re.compile(r'[0-9]+')
+            xy = [int(info) for info in pattern.findall(body[2])]
+            size = [int(info) for info in pattern.findall(body[3])]
+            rotate = json.loads(body[1].split(' ')[-1])
+            cuter = function.cuter(self.body, xy, size, rotate)
+            self.bodies.append({'name': body[0],
+                                'xy': xy,
+                                'size': size,
+                                'rotate': rotate,
+                                'pic': cuter})
+            body = self.frame.m_treeCtrl_boys.AppendItem(root, 'name: ' + body[0])
+            self.frame.m_treeCtrl_boys.AppendItem(body, "xy: " + json.dumps(xy))
+            self.frame.m_treeCtrl_boys.AppendItem(body, 'size: ' + json.dumps(size))
+            self.frame.m_treeCtrl_boys.AppendItem(body, 'rotate: ' + json.dumps(rotate))
+            self.frame.m_treeCtrl_boys.AppendItem(body, 'pic')
+
+    def pic_open(self):
+        print(self.frame.m_treeCtrl_boys.GetSelection())
+
+
+class Add(object):
     def __init__(self, parent: noname.MyDialog_Setting, name_list, names, start_path):
 
         self.parent = parent
@@ -728,7 +702,6 @@ class AddDialog(object):
 
     def get_new_dic(self):
         return self.names
-
 
     def show_info(self):
         for name in self.name_list:
@@ -873,4 +846,3 @@ class ChangeName:
 
     def get_change(self):
         return self.names
-

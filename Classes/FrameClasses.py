@@ -1,14 +1,13 @@
 import json
 import os
 import time
-from threading import Thread
 
 import wx
 
 from Classes import noname, WorkClasses, Threads
 
 
-class CaleFrame(noname.MyFrame1):
+class MainFrame(noname.MyFrame1):
 
     def __init__(self, parent):
         noname.MyFrame1.__init__(self, parent)
@@ -25,68 +24,70 @@ class CaleFrame(noname.MyFrame1):
         with open("files\\setting.json", 'r')as file:
             setting_dic = json.load(file)
         self.setting_self = setting_dic
-        self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
-        self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
-        self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
-        self.azur_lane_with_cn = setting_dic["azur_lane"]["export_with_cn"]
-
-        self.open_dir_after_finish = setting_dic["full"]["open_dir"]
-        self.skip_had = setting_dic["full"]["skip_had"]
-        self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
-        self.finish_exit = setting_dic["full"]["finish_exit"]
 
         with open("files\\default.json", 'r')as file:
             self.default = json.load(file)
 
-        self.azur_lane = WorkClasses.AzurLaneWork(self, setting=self.setting_self, default=self.default,
-                                                  start_path=self.start_path)
-
+        self.painting = WorkClasses.PaintingWork(self, setting=self.setting_self, default=self.default,
+                                                 start_path=self.start_path)
+        self.spine_cut = WorkClasses.SpineDivideWork(self, self.start_path)
         self.m_button_gui.Enable(False)
 
         self.setting_page = 0
 
+        self.m_simplebook_input.SetSelection(0)
+        self.m_choice_type.SetSelection(0)
         self.m_notebook_info.SetSelection(0)
         self.m_listbook_in.SetSelection(0)
 
     # file load method
     # azur lane
     def load_tex(self, event):
-        self.azur_lane.load_tex()
+        self.painting.load_tex()
 
     def load_Mesh(self, event):
-        self.azur_lane.load_mesh()
+        self.painting.load_mesh()
+
+    def load_body(self, event):
+        self.spine_cut.load_body()
+
+    def load_cut(self, event):
+        self.spine_cut.load_cuter()
 
     def load_mesh_fold(self, event):
 
-        self.azur_lane.load_mesh_fold()
+        self.painting.load_mesh_fold()
 
     def load_tex_fold(self, event):
-        self.azur_lane.load_tex_fold()
+        self.painting.load_tex_fold()
 
     def load_tex_and_mesh(self, event):
-        self.azur_lane.load_tex_and_mesh()
+        self.painting.load_tex_and_mesh()
 
     # choice
     def mesh_choice(self, event):
-        self.azur_lane.mesh_choice()
+        self.painting.mesh_choice()
 
     def tex_choice(self, event):
-        self.azur_lane.tex_choice()
+        self.painting.tex_choice()
 
     def open_file(self, event):
-        self.azur_lane.open_file()
+        self.painting.open_file()
 
     def open_pass(self, event):
-        self.azur_lane.open_pass()
+        self.painting.open_pass()
+
+    def open_pic(self, event):
+        self.spine_cut.pic_open()
 
     # export
     def export_choice(self, event):
-        if self.azur_lane.is_choice() is not None:
-            self.azur_lane.export_choice()
+        if self.painting.is_choice() is not None:
+            self.painting.export_choice()
 
     def export_all(self, event):
         title = '保存'
-        if self.azur_lane.is_able():
+        if self.painting.is_able():
             title += "-碧蓝航线"
         if self.default['lock']:
             address = self.default['export']
@@ -97,30 +98,30 @@ class CaleFrame(noname.MyFrame1):
         if dialog.ShowModal() == wx.ID_OK:
             temp = dialog.GetPath()
 
-            if self.azur_lane.is_able():
-                self.azur_lane.export_all(temp)
+            if self.painting.is_able():
+                self.painting.export_all(temp)
 
         else:
             pass
 
     def copy_file(self, event):
 
-        self.azur_lane.copy_file()
+        self.painting.copy_file()
 
     # tools
 
     # search
     def search_mesh(self, event):
-        self.azur_lane.search_mesh()
+        self.painting.search_mesh()
 
     def search_tex(self, event):
-        self.azur_lane.search_tex()
+        self.painting.search_tex()
 
     def search_pass(self, event):
-        self.azur_lane.search_pass()
+        self.painting.search_pass()
 
     def search_unable(self, event):
-        self.azur_lane.search_unable()
+        self.painting.search_unable()
 
     # else
 
@@ -132,29 +133,33 @@ class CaleFrame(noname.MyFrame1):
 
         self.exit()
 
-    def exit(self):
+    def exit(self, thread_exit=False):
         with open("%s\\files\\setting.json" % self.start_path, 'w')as file_save:
             json.dump(self.setting_self, file_save)
         with open("%s\\files\\default.json" % self.start_path, 'w')as file_:
             json.dump(self.default, file_)
-        if self.azur_lane.restore.is_alive():
-            message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
-
-            if message == wx.YES:
-                if message == wx.YES:
-                    self.azur_lane.restore.stop_(True)
-                    while self.azur_lane.restore.is_alive():
-                        time.sleep(1)
-                self.Destroy()
-            else:
-                pass
+        if thread_exit:
+            time.sleep(2)
+            self.Destroy()
         else:
+            if self.painting.restore.is_alive():
+                message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
 
-            message = wx.MessageBox("确认退出？", "提示", wx.YES_NO, )
-            if message == wx.YES:
-                self.Destroy()
-            elif message == wx.CANCEL:
-                pass
+                if message == wx.YES:
+                    if message == wx.YES:
+                        self.painting.restore.stop_(True)
+                        while self.painting.restore.is_alive():
+                            time.sleep(1)
+                    self.Destroy()
+                else:
+                    pass
+            else:
+
+                message = wx.MessageBox("确认退出？", "提示", wx.YES_NO, )
+                if message == wx.YES:
+                    self.Destroy()
+                elif message == wx.CANCEL:
+                    pass
 
     def change_size(self, event):
         pass
@@ -164,29 +169,30 @@ class CaleFrame(noname.MyFrame1):
         dialog.Show()
 
     def setting(self, event):
-        dialog = Setting(self, self.setting_self, self.default, self.start_path, self.azur_lane.tex_name,
-                         self.azur_lane.names, self.start_path, self.azur_lane.is_able_add(), self.setting_page)
+        dialog = Setting(self, self.setting_self, self.default, self.start_path, self.painting.tex_name,
+                         self.painting.names, self.start_path, self.painting.is_able_add(), self.setting_page)
         temp = dialog.ShowModal()
         if temp == 0:
             if dialog.IsChange:
-                thread = Threads.BackInfo(self.azur_lane)
+                thread = Threads.BackInfo(self.painting)
                 thread.start()
 
                 setting_dic = dialog.GetValue()
                 self.default = dialog.GetDefault()
                 self.setting_self = setting_dic
-                self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
-                self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
-                self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
 
-                self.open_dir_after_finish = setting_dic["full"]["open_dir"]
-                self.skip_had = setting_dic["full"]["skip_had"]
-                self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
-                self.finish_exit = setting_dic["full"]["finish_exit"]
-
-                self.azur_lane.update_setting(self.setting_self, self.default)
+                self.painting.update_setting(self.setting_self, self.default)
 
         self.setting_page = dialog.setting_select
+
+    def show_gl_win(self, event):
+        dialog = noname.MyDialog7(self)
+
+        dialog.ShowModal()
+
+    def change_type(self, event):
+        choice = self.m_choice_type.GetSelection()
+        self.m_simplebook_input.SetSelection(choice)
 
 
 class Writer(noname.MyDialog_enter_name):
@@ -237,10 +243,13 @@ class Setting(noname.MyDialog_Setting):
 
         self.azur_lane_divide_list = setting_dic["azur_lane"]['divide_list']
 
+        self.azur_lane_input_use = setting_dic["azur_lane"]["input_use"]
+
         self.open_dir_after_finish = setting_dic["full"]["open_dir"]
         self.skip_had = setting_dic["full"]["skip_had"]
         self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
         self.finish_exit = setting_dic["full"]["finish_exit"]
+        self.clear_list = setting_dic["full"]['clear_list']
 
         self.setting = setting_dic
         self.default = default
@@ -270,7 +279,7 @@ class Setting(noname.MyDialog_Setting):
         self.tex_work = False
         self.mesh_work = False
 
-        self.add_new_name = WorkClasses.AddDialog(self, name_list, names, start_path)
+        self.add_new_name = WorkClasses.Add(self, name_list, names, start_path)
         self.change_name_cn = WorkClasses.ChangeName(self, start_path)
         self.compare = WorkClasses.Compare(self)
 
@@ -281,6 +290,7 @@ class Setting(noname.MyDialog_Setting):
         self.m_notebook3.SetSelection(self.setting_select)
 
         self.m_radioBox_im.Enable(False)
+        self.m_bpButton7.Enable(False)
 
         self.names = {}
 
@@ -310,6 +320,7 @@ class Setting(noname.MyDialog_Setting):
         self.m_checkBox_pass_finished.SetValue(self.skip_had)
         self.m_checkBox_open_temp.SetValue(self.auto_open_choice_pic)
         self.m_checkBox4_finish_exit.SetValue(self.finish_exit)
+        self.m_checkBox_clear.SetValue(self.clear_list)
 
         self.m_dirPicker_export.SetPath(self.export)
 
@@ -331,10 +342,13 @@ class Setting(noname.MyDialog_Setting):
         self.setting['azur_lane']['mesh_limit'] = self.m_textCtrl_mesh_limit.GetValue()
         self.setting['azur_lane']['divide_list'] = self.azur_lane_divide_list
 
+        self.setting["azur_lane"]["input_use"] = self.m_radioBox_im.GetSelection()
+
         self.setting["full"]["open_dir"] = self.m_checkBox_autoopen.GetValue()
         self.setting["full"]["skip_had"] = self.m_checkBox_pass_finished.GetValue()
         self.setting["full"]["auto_open"] = self.m_checkBox_open_temp.GetValue()
         self.setting["full"]["finish_exit"] = self.m_checkBox4_finish_exit.GetValue()
+        self.setting["full"]['clear_list'] = self.m_checkBox_clear.GetValue()
 
         self.lock = self.default['lock'] = self.m_toggleBtn_lock.GetValue()
 
@@ -360,6 +374,7 @@ class Setting(noname.MyDialog_Setting):
         self.setting_select = self.m_notebook3.GetSelection()
 
     def lock_address(self, event):
+        self.change(event)
         self.IsChange = True
         self.lock = self.default['lock'] = self.m_toggleBtn_lock.GetValue()
 
@@ -369,6 +384,7 @@ class Setting(noname.MyDialog_Setting):
         self.m_dirPicker_az_tex_dir.Enable(not self.lock)
 
     def az_add(self, event):
+        self.change(event)
         dialog = AddPattern(self, self.index)
 
         dialog.ShowModal()
@@ -382,6 +398,7 @@ class Setting(noname.MyDialog_Setting):
             self.m_checkList_az_limits.Set(self.az_div_list)
 
     def az_del(self, event):
+        self.change(event)
         self.m_checkList_az_limits.Clear()
         if self.azur_lane_divide_list[self.__choice]['name'] == 'else':
             pass
@@ -414,6 +431,7 @@ class Setting(noname.MyDialog_Setting):
         self.az_type_use(event)
 
     def change_div(self, event):
+        self.change(event)
         if self.m_radioBox_type_use.GetSelection() == 0:
             if self.m_radioBox_az_div.GetSelection() == 2:
                 self.change(event)
@@ -429,6 +447,8 @@ class Setting(noname.MyDialog_Setting):
                 self.m_checkList_az_limits.Clear()
 
     def change_pattern(self, event):
+        self.change(event)
+
         index_2 = self.m_checkList_az_limits.GetSelection()
         dialog = AddPattern(self, index_2 + 1, self.azur_lane_divide_list[index_2]['name'],
                             self.azur_lane_divide_list[index_2]['pattern'], self.azur_lane_divide_list[index_2]['dir'])
@@ -530,6 +550,51 @@ class Setting(noname.MyDialog_Setting):
     def change_page(self, event):
         self.setting_select = self.m_notebook3.GetSelection()
 
+    def change_input(self, event):
+        self.change(event)
+        if self.m_radioBox_type_use.GetSelection() == 0:
+            choice = self.m_radioBox_im.GetSelection()
+            tex = [
+                r'^.+\.[Pp][Nn][Gg]$',
+                r'^.+_\d\.[Pp][Nn][Gg]$',
+                r'^.+_[Hh]\.[Pp][Nn][Gg]$',
+                r'^.+_[Gg]\.[Pp][Nn][Gg]$',
+                r'^(.+\\)*[^_\s]+(_younv)*\.[Pp][Nn][Gg]$',
+            ]
+            mesh = [
+                r'^.+-mesh\.[oO][Bb][Jj]$',
+                r'^.+_\d-mesh\.[oO][Bb][Jj]$',
+                r'^.+_[Hh]-mesh\.[oO][Bb][Jj]$',
+                r'^.+_[Gg]-mesh\.[oO][Bb][Jj]$',
+                r'^(.+\\)*[^_\s]+(_younv)*-mesh\.[oO][Bb][Jj]$',
+            ]
+            if choice == 0:
+                self.m_textCtrl_tex_limit.SetLabel(tex[0])
+                self.m_textCtrl_mesh_limit.SetLabel(mesh[0])
+            elif choice == 1:
+                self.m_textCtrl_tex_limit.SetLabel(tex[1])
+                self.m_textCtrl_mesh_limit.SetLabel(mesh[1])
+            elif choice == 2:
+                self.m_textCtrl_tex_limit.SetLabel(tex[2])
+                self.m_textCtrl_mesh_limit.SetLabel(mesh[2])
+            elif choice == 3:
+                self.m_textCtrl_tex_limit.SetLabel(tex[3])
+                self.m_textCtrl_mesh_limit.SetLabel(mesh[3])
+            elif choice == 4:
+                self.m_textCtrl_tex_limit.SetLabel(tex[4])
+                self.m_textCtrl_mesh_limit.SetLabel(mesh[4])
+            else:
+                pass
+        self.m_bpButton_defualt_tex.Enable(False)
+        self.m_bpButton6_default_mesh.Enable(False)
+
+    def type_ch(self, event):
+        if self.m_simplebook2.GetSelection() == 0:
+            self.m_simplebook2.SetSelection(1)
+
+        elif self.m_simplebook2.GetSelection() == 1:
+            self.m_simplebook2.SetSelection(0)
+
     def GetValue(self):
         return self.setting
 
@@ -556,6 +621,8 @@ class Setting(noname.MyDialog_Setting):
 
         self.m_checkList_az_limits.Set(self.az_div_list)
 
+        self.m_radioBox_im.SetSelection(self.azur_lane_input_use)
+
         self.az_type_use(event=event)
 
     def az_type_use(self, event):
@@ -569,6 +636,9 @@ class Setting(noname.MyDialog_Setting):
 
             self.m_textCtrl_mesh_limit.SetLabel(self.default_mesh_pattern)
             self.m_textCtrl_tex_limit.SetLabel(self.default_tex_pattern)
+
+            self.m_radioBox_im.Enable(True)
+            self.change_input(event)
 
             self.m_bpButton_del.Enable(False)
             self.m_bpButton_add.Enable(False)
@@ -603,6 +673,8 @@ class Setting(noname.MyDialog_Setting):
 
             self.m_textCtrl_mesh_limit.SetLabel(self.azur_lane_mesh_limit)
             self.m_textCtrl_tex_limit.SetLabel(self.azur_lane_tex_limit)
+
+            self.m_radioBox_im.Enable(False)
 
             if self.m_textCtrl_tex_limit.GetValue() != self.default_tex_pattern:
                 self.m_bpButton_defualt_tex.Enable(True)
@@ -751,7 +823,7 @@ class Pattern(noname.MyFrame_pattern):
 
 def main_part():
     app = wx.App(False)
-    frame = CaleFrame(None)
+    frame = MainFrame(None)
     frame.Show()
 
     app.MainLoop()

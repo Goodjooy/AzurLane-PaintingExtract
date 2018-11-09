@@ -115,17 +115,7 @@ def isfile(file):
 
 def re_int(num):
     """四舍五入"""
-    scale = 0.5
-    if scale >= 1:
-        return num
-    else:
-        int_num = int(num)
-        float_num = num - int_num
-
-        if float_num >= scale:
-            return int_num + 1
-        if float_num < scale:
-            return int_num
+    return round(num)
 
 
 def az_paint_restore(mesh_path: str, pic_path: str):
@@ -290,3 +280,22 @@ def pic_transform(path, size):
     y = round(bg.size[1] / 2 - pic.size[1] / 2)
     bg.paste(pic, (x, y, x + pic.size[0], y + pic.size[1]))
     return bg
+
+
+def body_enter(path: str):
+    """
+
+    :param path: address of pic
+    :return: PIL.Image type
+    """
+    return PIL.Image.open(path, 'r')
+
+
+def cuter(pic: PIL.Image, xy, size, rotate):
+
+    pic = pic.crop((xy[0], xy[1], xy[0] + size[0], xy[1] + size[1]))
+
+    if rotate:
+        pic = pic.rotate(-90, PIL.Image.BICUBIC, 1)
+
+    return pic
