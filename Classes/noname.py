@@ -485,6 +485,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_listBox_mesh.Bind( wx.EVT_LISTBOX_DCLICK, self.mesh_choice )
 		self.m_bpButton_body.Bind( wx.EVT_BUTTON, self.load_body )
 		self.m_bpButton_cut_way.Bind( wx.EVT_BUTTON, self.load_cut )
+		self.m_bpButton91.Bind( wx.EVT_BUTTON, self.export_pic )
 		self.m_treeCtrl_boys.Bind( wx.EVT_TREE_ITEM_RIGHT_CLICK, self.open_pic )
 		self.m_searchCtrl_pass.Bind( wx.EVT_SEARCHCTRL_SEARCH_BTN, self.search_pass )
 		self.m_listBox_skip.Bind( wx.EVT_LISTBOX_DCLICK, self.open_pass )
@@ -563,6 +564,9 @@ class MyFrame1 ( wx.Frame ):
 		event.Skip()
 
 	def load_cut( self, event ):
+		event.Skip()
+
+	def export_pic( self, event ):
 		event.Skip()
 
 	def open_pic( self, event ):
@@ -965,7 +969,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_panel20.SetSizer( bSizer32 )
 		self.m_panel20.Layout()
 		bSizer32.Fit( self.m_panel20 )
-		self.m_notebook3.AddPage( self.m_panel20, u"设置-碧蓝航线", True )
+		self.m_notebook3.AddPage( self.m_panel20, u"设置-碧蓝航线", False )
 		self.m_panel12 = wx.Panel( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gSizer18 = wx.GridSizer( 0, 3, 0, 0 )
 
@@ -1039,7 +1043,129 @@ class MyDialog_Setting ( wx.Dialog ):
 		gSizer18.Fit( self.m_panel12 )
 		self.m_notebook3.AddPage( self.m_panel12, u"工具", False )
 		self.m_panel21 = wx.Panel( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.m_notebook3.AddPage( self.m_panel21, u"a page", False )
+		bSizer33 = wx.BoxSizer( wx.VERTICAL )
+
+		self.m_splitter2 = wx.SplitterWindow( self.m_panel21, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.SP_3D )
+		self.m_splitter2.Bind( wx.EVT_IDLE, self.m_splitter2OnIdle )
+
+		self.m_panel231 = wx.Panel( self.m_splitter2, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		sbSizer20 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel231, wx.ID_ANY, u"加密" ), wx.VERTICAL )
+
+		bSizer36 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_button_file = wx.Button( sbSizer20.GetStaticBox(), wx.ID_ANY, u"加载文件", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer36.Add( self.m_button_file, 0, wx.ALL, 5 )
+
+		self.m_gauge_file = wx.Gauge( sbSizer20.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_file.SetValue( 0 )
+		bSizer36.Add( self.m_gauge_file, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer20.Add( bSizer36, 0, wx.EXPAND, 5 )
+
+		bSizer37 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_button_folder = wx.Button( sbSizer20.GetStaticBox(), wx.ID_ANY, u"加载文件夹", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer37.Add( self.m_button_folder, 0, wx.ALL, 5 )
+
+		self.m_gauge_dir = wx.Gauge( sbSizer20.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_dir.SetValue( 0 )
+		bSizer37.Add( self.m_gauge_dir, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer20.Add( bSizer37, 0, wx.EXPAND, 5 )
+
+		self.m_staticline81 = wx.StaticLine( sbSizer20.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		sbSizer20.Add( self.m_staticline81, 0, wx.EXPAND |wx.ALL, 5 )
+
+		m_listBox_picsChoices = []
+		self.m_listBox_pics = wx.ListBox( sbSizer20.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox_picsChoices, 0 )
+		sbSizer20.Add( self.m_listBox_pics, 1, wx.ALL|wx.EXPAND, 5 )
+
+		bSizer42 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_gauge_works = wx.Gauge( sbSizer20.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_works.SetValue( 0 )
+		bSizer42.Add( self.m_gauge_works, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+		m_choice_typeChoices = [ u"普通", u"标准", u"复杂" ]
+		self.m_choice_type = wx.Choice( sbSizer20.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_typeChoices, 0 )
+		self.m_choice_type.SetSelection( 0 )
+		bSizer42.Add( self.m_choice_type, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+		self.m_button_star = wx.Button( sbSizer20.GetStaticBox(), wx.ID_ANY, u"开始", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer42.Add( self.m_button_star, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer20.Add( bSizer42, 0, wx.EXPAND, 5 )
+
+
+		self.m_panel231.SetSizer( sbSizer20 )
+		self.m_panel231.Layout()
+		sbSizer20.Fit( self.m_panel231 )
+		self.m_panel241 = wx.Panel( self.m_splitter2, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		sbSizer201 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel241, wx.ID_ANY, u"解密" ), wx.VERTICAL )
+
+		bSizer361 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_button_file_in = wx.Button( sbSizer201.GetStaticBox(), wx.ID_ANY, u"加载文件", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer361.Add( self.m_button_file_in, 0, wx.ALL, 5 )
+
+		self.m_gauge_file_in = wx.Gauge( sbSizer201.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_file_in.SetValue( 0 )
+		bSizer361.Add( self.m_gauge_file_in, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer201.Add( bSizer361, 0, wx.EXPAND, 5 )
+
+		bSizer371 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_button_folder_in = wx.Button( sbSizer201.GetStaticBox(), wx.ID_ANY, u"加载文件夹", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer371.Add( self.m_button_folder_in, 0, wx.ALL, 5 )
+
+		self.m_gauge_fold_in = wx.Gauge( sbSizer201.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_fold_in.SetValue( 0 )
+		bSizer371.Add( self.m_gauge_fold_in, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer201.Add( bSizer371, 0, wx.EXPAND, 5 )
+
+		self.m_staticline811 = wx.StaticLine( sbSizer201.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		sbSizer201.Add( self.m_staticline811, 0, wx.EXPAND |wx.ALL, 5 )
+
+		m_listBox_pic_inChoices = []
+		self.m_listBox_pic_in = wx.ListBox( sbSizer201.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox_pic_inChoices, 0 )
+		sbSizer201.Add( self.m_listBox_pic_in, 1, wx.ALL|wx.EXPAND, 5 )
+
+		bSizer421 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.m_gauge_work_in = wx.Gauge( sbSizer201.GetStaticBox(), wx.ID_ANY, 100, wx.DefaultPosition, wx.DefaultSize, wx.GA_HORIZONTAL )
+		self.m_gauge_work_in.SetValue( 0 )
+		bSizer421.Add( self.m_gauge_work_in, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+		m_choice_type_inChoices = [ u"普通", u"标准", u"复杂" ]
+		self.m_choice_type_in = wx.Choice( sbSizer201.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_type_inChoices, 0 )
+		self.m_choice_type_in.SetSelection( 0 )
+		bSizer421.Add( self.m_choice_type_in, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+		self.m_button_star_in = wx.Button( sbSizer201.GetStaticBox(), wx.ID_ANY, u"开始", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer421.Add( self.m_button_star_in, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+		sbSizer201.Add( bSizer421, 0, wx.EXPAND, 5 )
+
+
+		self.m_panel241.SetSizer( sbSizer201 )
+		self.m_panel241.Layout()
+		sbSizer201.Fit( self.m_panel241 )
+		self.m_splitter2.SplitVertically( self.m_panel231, self.m_panel241, 0 )
+		bSizer33.Add( self.m_splitter2, 1, wx.EXPAND, 5 )
+
+
+		self.m_panel21.SetSizer( bSizer33 )
+		self.m_panel21.Layout()
+		bSizer33.Fit( self.m_panel21 )
+		self.m_notebook3.AddPage( self.m_panel21, u"加密器", True )
 
 		bSizer19.Add( self.m_notebook3, 1, wx.EXPAND |wx.ALL, 5 )
 
@@ -1095,6 +1221,12 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_dirPicker_old.Bind( wx.EVT_DIRPICKER_CHANGED, self.add_new )
 		self.m_dirPicker6.Bind( wx.EVT_DIRPICKER_CHANGED, self.add_old )
 		self.m_listBox_deffer.Bind( wx.EVT_LISTBOX_DCLICK, self.writer_into )
+		self.m_button_file.Bind( wx.EVT_BUTTON, self.in_file )
+		self.m_button_folder.Bind( wx.EVT_BUTTON, self.in_fold )
+		self.m_button_star.Bind( wx.EVT_BUTTON, self.in_start )
+		self.m_button_file_in.Bind( wx.EVT_BUTTON, self.out_file )
+		self.m_button_folder_in.Bind( wx.EVT_BUTTON, self.out_fold )
+		self.m_button_star_in.Bind( wx.EVT_BUTTON, self.out_start )
 		self.m_sdbSizer4Apply.Bind( wx.EVT_BUTTON, self.apply_click )
 		self.m_sdbSizer4Cancel.Bind( wx.EVT_BUTTON, self.cancel_click )
 		self.m_sdbSizer4OK.Bind( wx.EVT_BUTTON, self.ok_click )
@@ -1186,6 +1318,24 @@ class MyDialog_Setting ( wx.Dialog ):
 	def writer_into( self, event ):
 		event.Skip()
 
+	def in_file( self, event ):
+		event.Skip()
+
+	def in_fold( self, event ):
+		event.Skip()
+
+	def in_start( self, event ):
+		event.Skip()
+
+	def out_file( self, event ):
+		event.Skip()
+
+	def out_fold( self, event ):
+		event.Skip()
+
+	def out_start( self, event ):
+		event.Skip()
+
 	def apply_click( self, event ):
 		event.Skip()
 
@@ -1198,6 +1348,10 @@ class MyDialog_Setting ( wx.Dialog ):
 	def m_splitter1OnIdle( self, event ):
 		self.m_splitter1.SetSashPosition( 0 )
 		self.m_splitter1.Unbind( wx.EVT_IDLE )
+
+	def m_splitter2OnIdle( self, event ):
+		self.m_splitter2.SetSashPosition( 0 )
+		self.m_splitter2.Unbind( wx.EVT_IDLE )
 
 
 ###########################################################################

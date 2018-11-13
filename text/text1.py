@@ -1,5 +1,7 @@
 import json
 import os
+import numpy as np
+import PIL.Image
 
 
 def change_work():
@@ -30,7 +32,7 @@ def change_work():
         json.dump(setting, i)
 
 
-#change_work()
+# change_work()
 
 
 def emm_work():
@@ -49,8 +51,55 @@ def emm_work():
     with open("..\\files\\default.json", 'w')as file:
         json.dump(default, file)
 
+
 # emm_work()
-def emm(a:str):
-    asass=a
-a=(1,2)
-a[1]=1
+def encrypt_easy(path: str):
+    path = PIL.Image.open(path, 'r')
+    array_img = np.array(path)
+
+    array_r = array_img[:, :, 0]
+    array_g = array_img[:, :, 1]
+    array_b = array_img[:, :, 2]
+    array_a = array_img[:, :, 3]
+
+    array_img[:, :, 0] = 255 - array_r
+    array_img[:, :, 1] = 255 - array_g
+    array_img[:, :, 2] = 255 - array_b
+    array_img[:, :, 3] = 255 - array_a
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+
+    r_pic.show()
+    r_pic.save('5.png')
+    return r_pic
+
+
+# encrypt_easy('4.png')
+def crypt_easy(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path_pic.size[0], path_pic.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = 255 - array_img[:, :, 0]
+    array_g = 255 - array_img[:, :, 1]
+    array_b = 255 - array_img[:, :, 2]
+    array_a = array_img[:, :, 3]
+
+    print(array_a[50])
+    print()
+    print(array_g[50])
+    print()
+    print(array_r[50])
+    array_img[:, :, 1] = array_r
+    array_img[:, :, 3] = array_g
+    array_img[:, :, 0] = array_b
+    array_img[:, :, 2] = array_a  # array_b
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+    r_pic.show()
+    r_pic.save('5.png')
+    return r_pic
+
+
+crypt_easy('22.png')

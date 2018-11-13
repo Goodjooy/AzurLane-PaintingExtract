@@ -1,5 +1,5 @@
 import PIL.Image
-
+import numpy as np
 import os
 
 
@@ -292,10 +292,148 @@ def body_enter(path: str):
 
 
 def cuter(pic: PIL.Image, xy, size, rotate):
-
-    pic = pic.crop((xy[0], xy[1], xy[0] + size[0], xy[1] + size[1]))
-
     if rotate:
-        pic = pic.rotate(-90, PIL.Image.BICUBIC, 1)
+
+        pic = pic.crop((xy[0], xy[1], xy[0] + size[1], xy[1] + size[0]))
+        pic = pic.rotate(-90, expand=True)
+    else:
+        pic = pic.crop((xy[0], xy[1], xy[0] + size[0], xy[1] + size[1]))
 
     return pic
+
+
+def encrypt_easy(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path_pic.size[0], path_pic.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = array_img[:, :, 3]
+    array_g = array_img[:, :, 2]
+    array_b = array_img[:, :, 1]
+    array_a = array_img[:, :, 0]
+
+    array_img[:, :, 0] = 255 - array_r
+    array_img[:, :, 1] = 255 - array_g
+    array_img[:, :, 2] = 255 - array_b
+    array_img[:, :, 3] = 255 - array_a
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+
+    return r_pic
+
+
+def encrypt_differ(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path_pic.size[0], path_pic.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = array_img[:, :, 0]
+    array_g = array_img[:, :, 1]
+    array_b = array_img[:, :, 2]
+    array_a = array_img[:, :, 3]
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_r))
+    g_pic = PIL.Image.fromarray(np.uint8(array_g))
+    b_pic = PIL.Image.fromarray(np.uint8(array_b))
+    a_pic = PIL.Image.fromarray(np.uint8(array_a))
+
+    r_pic = r_pic.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+    g_pic = g_pic.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+    b_pic = b_pic.rotate(180)
+    a_pic = a_pic.rotate(180).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+
+    array_r = np.array(r_pic)
+    array_g = np.array(g_pic)
+    array_b = np.array(b_pic)
+    array_a = np.array(a_pic)
+
+    array_img[:, :, 0] = 255 - array_b
+    array_img[:, :, 1] = 255 - array_r
+    array_img[:, :, 2] = 255 - array_a
+    array_img[:, :, 3] = array_g
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+    return r_pic
+
+
+def encrypt_basic(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path.size[0], path.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = array_img[:, :, 0]
+    array_g = array_img[:, :, 1]
+    array_b = array_img[:, :, 2]
+    array_a = array_img[:, :, 3]
+
+    array_img[:, :, 0] = 255 - array_r
+    array_img[:, :, 1] = 255 - array_g
+    array_img[:, :, 2] = 255 - array_b
+    array_img[:, :, 3] = 255 - array_a
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+
+    return r_pic
+
+
+def crypt_basic(path: str):
+    return encrypt_basic(path)
+
+
+def crypt_easy(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path_pic.size[0], path_pic.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = 255 - array_img[:, :, 0]
+    array_g = 255 - array_img[:, :, 1]
+    array_b = 255 - array_img[:, :, 2]
+    array_a = 255 - array_img[:, :, 3]
+
+    array_img[:, :, 0] = array_r
+    array_img[:, :, 1] = array_g
+    array_img[:, :, 2] = array_b
+    array_img[:, :, 3] = array_a
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+
+    return r_pic
+
+
+def crypt_differ(path: str):
+    path = PIL.Image.open(path, 'r')
+    path_pic = PIL.Image.new('RGBA', path.size, (255, 255, 255, 0))
+    path_pic.paste(path, (0, 0, path_pic.size[0], path_pic.size[1]))
+    array_img = np.array(path_pic)
+
+    array_r = array_img[:, :, 0]
+    array_g = array_img[:, :, 1]
+    array_b = array_img[:, :, 2]
+    array_a = array_img[:, :, 3]
+
+    g_pic = PIL.Image.fromarray(np.uint8(array_r))
+    a_pic = PIL.Image.fromarray(np.uint8(array_g))
+    r_pic = PIL.Image.fromarray(np.uint8(array_b))
+    b_pic = PIL.Image.fromarray(np.uint8(array_a))
+
+    g_pic = g_pic.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+    a_pic = a_pic.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+    r_pic = r_pic.rotate(-180)
+    b_pic = b_pic.rotate(-180).transpose(PIL.Image.FLIP_TOP_BOTTOM)
+
+    array_r = np.array(r_pic)
+    array_g = np.array(g_pic)
+    array_b = np.array(b_pic)
+    array_a = np.array(a_pic)
+
+    array_img[:, :, 0] = 255 - array_r
+    array_img[:, :, 1] = 255 - array_g
+    array_img[:, :, 2] = 255 - array_b
+    array_img[:, :, 3] = array_a
+
+    r_pic = PIL.Image.fromarray(np.uint8(array_img))
+    return r_pic

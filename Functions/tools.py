@@ -20,6 +20,8 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
     :return: if do not raise any error and worked bool->True,else bool->False
     """
     try:
+        if names is None:
+            names = {}
         if clear_list:
             set_list.clear()
             list_enter.clear()

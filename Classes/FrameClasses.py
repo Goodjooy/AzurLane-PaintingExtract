@@ -81,6 +81,9 @@ class MainFrame(noname.MyFrame1):
         self.spine_cut.pic_open()
 
     # export
+    def export_pic( self, event ):
+        self.spine_cut.export_pic()
+
     def export_choice(self, event):
         if self.painting.is_choice() is not None:
             self.painting.export_choice()
@@ -282,6 +285,8 @@ class Setting(noname.MyDialog_Setting):
         self.add_new_name = WorkClasses.Add(self, name_list, names, start_path)
         self.change_name_cn = WorkClasses.ChangeName(self, start_path)
         self.compare = WorkClasses.Compare(self)
+        self.encrypt = WorkClasses.EncryptImage(self)
+        self.crypt = WorkClasses.CryptImage(self)
 
         self.able_add = able_add
         self.able_work()
@@ -291,6 +296,8 @@ class Setting(noname.MyDialog_Setting):
 
         self.m_radioBox_im.Enable(False)
         self.m_bpButton7.Enable(False)
+        self.m_choice_type_in.Enable(False)
+        self.m_choice_type.Enable(False)
 
         self.names = {}
 
@@ -594,6 +601,24 @@ class Setting(noname.MyDialog_Setting):
 
         elif self.m_simplebook2.GetSelection() == 1:
             self.m_simplebook2.SetSelection(0)
+
+    def in_file(self, event):
+        self.encrypt.in_file()
+
+    def in_fold(self, event):
+        self.encrypt.in_folder()
+
+    def in_start(self, event):
+        self.encrypt.start()
+
+    def out_file(self, event):
+        self.crypt.in_file()
+
+    def out_fold(self, event):
+        self.crypt.in_folder()
+
+    def out_start(self, event):
+        self.crypt.start()
 
     def GetValue(self):
         return self.setting

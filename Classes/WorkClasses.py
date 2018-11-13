@@ -612,7 +612,7 @@ class PaintingWork(BaseWorkClass):
 
 
 class SpineDivideWork(BaseWorkClass):
-    def __init__(self, frame:noname.MyFrame1, start_path=os.getcwd()):
+    def __init__(self, frame: noname.MyFrame1, start_path=os.getcwd()):
         super(SpineDivideWork, self).__init__(frame)
 
         self.path = start_path
@@ -626,6 +626,8 @@ class SpineDivideWork(BaseWorkClass):
         self.body: PIL.Image = None
 
         self.bodies = []
+
+        self.name = ''
 
     def need_work(self):
 
@@ -657,7 +659,8 @@ class SpineDivideWork(BaseWorkClass):
         cuter = cuter[0].replace('\\n', '\n')
 
         name = re.findall(r'.+\.png', cuter)[0]
-        name = os.path.basename(name)
+        self.name = os.path.splitext(name)[0]
+        name = self.name
 
         self.cuter = self.cuter.replace(cuter, '')
 
@@ -685,6 +688,108 @@ class SpineDivideWork(BaseWorkClass):
 
     def pic_open(self):
         print(self.frame.m_treeCtrl_boys.GetSelection())
+
+    def export_pic(self):
+        self.dialog = wx.DirDialog(self.frame, 'divide', os.getcwd(),
+                                   wx.DD_DIR_MUST_EXIST | wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            path = os.path.join(self.dialog.GetPath(), self.name)
+            os.makedirs(path, exist_ok=True)
+            for val in self.bodies:
+                path_save=os.path.join(path, f"{val['name']}.png")
+                val['pic'].save(path_save)
+
+
+class EncryptImage(BaseWorkClass):
+    def __init__(self, frame: noname.MyDialog_Setting):
+        super(EncryptImage, self).__init__(frame)
+        self.dialog = None
+        self.in_show = []
+        self.path = {}
+
+    def in_file(self):
+        self.frame.m_gauge_file.SetValue(0)
+        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
+                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
+                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
+
+            if returned:
+                self.frame.m_gauge_file.SetValue(100)
+                self.frame.m_listBox_pics.Clear()
+                self.frame.m_listBox_pics.Set(self.in_show)
+
+    def in_folder(self):
+        self.frame.m_gauge_dir.SetValue(0)
+        self.dialog = wx.DirDialog(self.frame, "打开",
+                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            path = function.all_file_path(self.dialog.GetPath())[1]
+
+            returned = tools.file_deal(path, self.in_show, [], [], self.path,
+                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
+
+            if returned:
+                self.frame.m_gauge_dir.SetValue(100)
+                self.frame.m_listBox_pics.Clear()
+                self.frame.m_listBox_pics.Set(self.in_show)
+
+    def start(self):
+        self.dialog = wx.DirDialog(self.frame, "保存",
+                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+        if self.dialog.ShowModal() == wx.ID_OK:
+            thread = Threads.EncryptTread(self.in_show, self.frame.m_choice_type.GetSelection(), self.path,
+                                          self.dialog.GetPath(), self.frame)
+            thread.start()
+            self.frame.m_button_star.Enable(False)
+
+
+class CryptImage(EncryptImage):
+    def __init__(self, frame: noname.MyDialog_Setting):
+        super(CryptImage, self).__init__(frame)
+
+    def in_file(self):
+        self.frame.m_gauge_file_in.SetValue(0)
+        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
+                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
+                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
+
+            if returned:
+                self.frame.m_gauge_file_in.SetValue(100)
+                self.frame.m_listBox_pic_in.Clear()
+                self.frame.m_listBox_pic_in.Set(self.in_show)
+
+    def in_folder(self):
+        self.frame.m_gauge_fold_in.SetValue(0)
+        self.dialog = wx.DirDialog(self.frame, "打开",
+                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+
+        if self.dialog.ShowModal() == wx.ID_OK:
+            path = function.all_file_path(self.dialog.GetPath())[1]
+
+            returned = tools.file_deal(path, self.in_show, [], [], self.path,
+                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
+
+            if returned:
+                self.frame.m_gauge_fold_in.SetValue(100)
+                self.frame.m_listBox_pic_in.Clear()
+                self.frame.m_listBox_pic_in.Set(self.in_show)
+
+    def start(self):
+        self.dialog = wx.DirDialog(self.frame, "保存",
+                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+        if self.dialog.ShowModal() == wx.ID_OK:
+            thread = Threads.CryptTread(self.in_show, self.frame.m_choice_type_in.GetSelection(), self.path,
+                                        self.dialog.GetPath(), self.frame)
+            thread.start()
+            self.frame.m_button_star_in.Enable(False)
 
 
 class Add(object):
