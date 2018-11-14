@@ -3,11 +3,10 @@ import os.path as op
 
 
 def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_path: dict, clear_list: bool = False,
-              pattern=r'^[.\n]*$', is_file=True, replace_str: str = '', names: dict = None, start: int = 0):
+              pattern=r'^[.\n]*$', is_file=True, replace_str: str = '', names: dict = None):
     """
 
     :param clear_list: is need clear the list
-    :param start: the start index list
     :param paths: DirPicker path or FilePicker files
     :param set_list: the list save the keys
     :param list_search: the list to search
@@ -17,22 +16,27 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
     :param is_file: a bool of the load type bool True->FilePicker,False->DirPicker
     :param replace_str: the need replace string in the base filename
     :param names: the Chinese-base_name dict
+
     :return: if do not raise any error and worked bool->True,else bool->False
     """
     try:
         if names is None:
             names = {}
-        if clear_list:
-            set_list.clear()
-            list_enter.clear()
-            list_search.clear()
-        num = start
+
         pattern_re = re.compile(pattern)
         if not is_file:
             dict_path = paths.copy()
             paths = paths.keys()
+            num = len(paths)
         else:
             dict_path = {}
+            num = len(paths)
+
+        if clear_list:
+            set_list.clear()
+            list_enter.clear()
+            list_search.clear()
+            num = 0
 
         if not len(paths) == 0:
 
@@ -57,9 +61,11 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
                             list_search.append(f"{name}")
                 else:
                     continue
+            if num == 0:
+                return False, '导入完成，无新增项！'
         else:
-            return False
-    except(TypeError, KeyError, RuntimeError):
-        return False
+            return False, '导入失败，无导入项！'
+    except (TypeError, KeyError, RuntimeError):
+        return False, '导入失败，发生错误！'
     else:
-        return True
+        return True, '导入成功！ 成功导入%d个！' % num

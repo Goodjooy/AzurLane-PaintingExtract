@@ -40,6 +40,8 @@ class MainFrame(noname.MyFrame1):
         self.m_notebook_info.SetSelection(0)
         self.m_listbook_in.SetSelection(0)
 
+        self.choice = 0
+
     # file load method
     # azur lane
     def load_tex(self, event):
@@ -81,7 +83,7 @@ class MainFrame(noname.MyFrame1):
         self.spine_cut.pic_open()
 
     # export
-    def export_pic( self, event ):
+    def export_pic(self, event):
         self.spine_cut.export_pic()
 
     def export_choice(self, event):
@@ -112,6 +114,9 @@ class MainFrame(noname.MyFrame1):
         self.painting.copy_file()
 
     # tools
+    def quick_work(self, event):
+        quick = QuickWork(self, self, self.painting)
+        quick.ShowModal()
 
     # search
     def search_mesh(self, event):
@@ -136,6 +141,9 @@ class MainFrame(noname.MyFrame1):
 
         self.exit()
 
+    def reset_spine(self, event):
+        self.spine_cut.reset()
+
     def exit(self, thread_exit=False):
         with open("%s\\files\\setting.json" % self.start_path, 'w')as file_save:
             json.dump(self.setting_self, file_save)
@@ -153,6 +161,7 @@ class MainFrame(noname.MyFrame1):
                         self.painting.restore.stop_(True)
                         while self.painting.restore.is_alive():
                             time.sleep(1)
+
                     self.Destroy()
                 else:
                     pass
@@ -160,6 +169,7 @@ class MainFrame(noname.MyFrame1):
 
                 message = wx.MessageBox("确认退出？", "提示", wx.YES_NO, )
                 if message == wx.YES:
+
                     self.Destroy()
                 elif message == wx.CANCEL:
                     pass
@@ -195,7 +205,18 @@ class MainFrame(noname.MyFrame1):
 
     def change_type(self, event):
         choice = self.m_choice_type.GetSelection()
-        self.m_simplebook_input.SetSelection(choice)
+        if choice == 2:
+            self.m_choice_type.SetSelection(self.choice)
+
+            message = wx.MessageBox("将启动AzurLaneLive2DExtract所在文件夹，\n运行并直接将live2D文件拖入即可。", '信息', wx.YES_NO)
+            if message == wx.YES:
+                # os.system(r'start %s\\files\\lived\\AzurLaneLive2DExtract.exe' % self.start_path)
+                os.system(r'start %s\\files\\lived' % self.start_path)
+            else:
+                pass
+        else:
+            self.choice = choice
+            self.m_simplebook_input.SetSelection(choice)
 
 
 class Writer(noname.MyDialog_enter_name):
@@ -844,6 +865,71 @@ class Pattern(noname.MyFrame_pattern):
         ]
         self.m_listBox_info.Set(info)
         self.m_listBox_info2.Set(info2)
+
+
+class QuickWork(noname.MyDialogQuick):
+    def __init__(self, parent, frame: noname.MyFrame1, az: WorkClasses.PaintingWork):
+        super(QuickWork, self).__init__(parent)
+
+        self.az = az
+        self.frame = frame
+        self.start = False
+        self.m_choice_im_type.SetSelection(0)
+        self.m_choice_tex_type.SetSelection(0)
+        self.m_choice_mesh_type.SetSelection(0)
+
+        self.m_notebook3.SetSelection(0)
+
+    def im_sele(self, event):
+        choice = self.m_choice_im_type.GetSelection()
+        self.m_simplebook3.SetSelection(choice)
+        self.able_work()
+
+    def quick_tex(self, event):
+        select = self.m_choice_tex_type.GetSelection()
+        if select == 0:
+            txt = self.az.load_tex()
+        else:
+            txt = self.az.load_tex_fold()
+        if not isinstance(txt, str):
+            txt = json.dumps(txt)
+        self.m_textCtrl_qk_tex.SetLabel(txt)
+        self.able_work()
+
+    def quick_mesh(self, event):
+        select = self.m_choice_mesh_type.GetSelection()
+        if select == 0:
+            txt = self.az.load_mesh()
+        else:
+            txt = self.az.load_mesh_fold()
+        if not isinstance(txt, str):
+            txt = json.dumps(txt)
+        self.m_textCtrl_qk_mesh.SetLabel(txt)
+
+        self.able_work()
+
+    def quick_setting(self, event):
+        self.frame.setting(event)
+
+    def quick_both(self, event):
+
+        txt = self.az.load_tex_and_mesh()
+
+        self.m_textCtrl_qk_ex.SetLabel(txt)
+        self.able_work()
+
+    def quick_export(self, event):
+        temp = self.m_dirPicker8.GetPath()
+
+        if self.az.is_able():
+            self.az.export_all(temp)
+        self.start = True
+        self.able_work()
+
+    def able_work(self):
+        if self.az.is_able() and self.start:
+            self.frame.m_gauge_quick.SetValue(100)
+            self.Destroy()
 
 
 def main_part():

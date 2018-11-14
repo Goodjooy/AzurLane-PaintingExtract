@@ -130,12 +130,17 @@ class PaintingWork(BaseWorkClass):
             returned = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
                                        self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, True, '',
                                        self.names)
-            if returned:
+            if returned[0]:
                 self.form.m_gauge_tex_load.SetValue(100)
-                self.form.m_staticText_load_tex.SetLabel("完成")
-                self.form.m_listBox_tex.Set(self.tex_name_china)
 
+                self.form.m_listBox_tex.Set(self.tex_name_china)
+            self.form.m_staticText_load_tex.SetLabel(returned[1])
+            address = paths
+        else:
+            address = ''
         self.info_check()
+
+        return address
 
     def load_mesh(self):
         self.form.m_gauge_tex_load.SetValue(0)
@@ -154,12 +159,19 @@ class PaintingWork(BaseWorkClass):
                                        self.mesh_list_path_dir, self.full['clear_list'],
                                        self.pattern_mesh, True, "-mesh", self.names)
 
-            if returned:
+            if returned[0]:
                 self.form.m_gauge_mesh_load.SetValue(function.re_int(100))
-                self.form.m_staticText_mesh_load.SetLabel("完成")
+
                 self.form.m_listBox_mesh.Set(self.mesh_name_china)
+            self.form.m_staticText_mesh_load.SetLabel(returned[1])
+
+            address = paths
+        else:
+            address = ''
 
         self.info_check()
+
+        return address
 
     def load_mesh_fold(self):
         self.form.m_gauge_tex_load.SetValue(0)
@@ -178,14 +190,21 @@ class PaintingWork(BaseWorkClass):
             self.form.m_gauge_mesh_load.SetValue(0)
 
             paths = function.all_file_path(paths)[1]
-            returned = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                       self.mesh_list_path_dir, self.full['clear_list'],
-                                       self.pattern_mesh, False, "-mesh", self.names)
+            returned, info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                             self.mesh_list_path_dir, self.full['clear_list'],
+                                             self.pattern_mesh, False, "-mesh", self.names)
             if returned:
                 self.form.m_gauge_mesh_load.SetValue(100)
-                self.form.m_staticText_mesh_load.SetLabel("完成")
+                self.form.m_staticText_mesh_load.SetLabel(info)
                 self.form.m_listBox_mesh.Set(self.mesh_name_china)
+            self.form.m_staticText_mesh_load.SetLabel(info)
+            address = self.__dialog.GetPath()
+        else:
+            address = 'None'
+
         self.info_check()
+
+        return address
 
     def load_tex_fold(self):
         self.form.m_gauge_tex_load.SetValue(0)
@@ -203,15 +222,23 @@ class PaintingWork(BaseWorkClass):
             paths = self.__dialog.GetPath()
 
             paths = function.all_file_path(paths)[1]
-            returned = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                       self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False, '',
-                                       self.names)
+            returned, info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                             self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False,
+                                             '',
+                                             self.names)
             if returned:
                 self.form.m_gauge_tex_load.SetValue(100)
-                self.form.m_staticText_load_tex.SetLabel("完成")
+
                 self.form.m_listBox_tex.Set(self.tex_name_china)
+            self.form.m_staticText_load_tex.SetLabel(info)
+
+            address = self.__dialog.GetPath()
+        else:
+            address = 'None'
 
         self.info_check()
+
+        return address
 
     def load_tex_and_mesh(self):
         self.form.m_gauge_tex_load.SetValue(0)
@@ -226,23 +253,32 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
-            returned_tex = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                           self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False, '',
-                                           self.names, start=0)
+            returned_tex, tex_info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                                     self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex,
+                                                     False, '',
+                                                     self.names)
 
-            returned_mesh = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                            self.mesh_list_path_dir, self.full['clear_list'],
-                                            self.pattern_mesh, False, "-mesh", self.names, start=0)
+            returned_mesh, mesh_info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                                       self.mesh_list_path_dir, self.full['clear_list'],
+                                                       self.pattern_mesh, False, "-mesh", self.names)
             if returned_tex:
                 self.form.m_gauge_tex_load.SetValue(100)
-                self.form.m_staticText_load_tex.SetLabel("完成")
+
                 self.form.m_listBox_tex.Set(self.tex_name_china)
+            self.form.m_staticText_load_tex.SetLabel(tex_info)
             if returned_mesh:
                 self.form.m_gauge_mesh_load.SetValue(100)
-                self.form.m_staticText_mesh_load.SetLabel("完成")
+
                 self.form.m_listBox_mesh.Set(self.mesh_name_china)
+            self.form.m_staticText_mesh_load.SetLabel(mesh_info)
+
+            address = self.__dialog.GetPath()
+        else:
+            address = 'None'
 
         self.info_check()
+
+        return address
 
     # choice
     def mesh_choice(self):
@@ -350,8 +386,8 @@ class PaintingWork(BaseWorkClass):
             self.able_restore_list = able_restore
             self.form.m_notebook_info.SetSelection(0)
 
-        self.form.m_listBox_info.Clear()
-        self.form.m_listBox_info.Set(self.passed_show)
+        self.form.m_listBox_skip.Clear()
+        self.form.m_listBox_skip.Set(self.passed_show)
 
         self.restore.update_list(self.able_restore_list, self.unable_restore_list)
         self.restore.add_save_path(self.save_path)
@@ -619,8 +655,6 @@ class SpineDivideWork(BaseWorkClass):
 
         self.dialog = wx.Dialog
 
-        self.pattern = r'\n.+?\n\s{2}rotate: .+?\n\s{2}xy: \d+?, \d+?\n\s{2}size: \d+?, \d+?\n\s{2}orig: \d+?, \d+?\n\s{2}offset: \d+?, \d+?\n {2}index: \d+?'
-
         self.cuter = ''
 
         self.body: PIL.Image = None
@@ -628,6 +662,10 @@ class SpineDivideWork(BaseWorkClass):
         self.bodies = []
 
         self.name = ''
+
+        self.root = self.frame.m_treeCtrl_boys.AddRoot("娃娃")
+
+        self.frame.m_bpButton_ex_spine.Enable(False)
 
     def need_work(self):
 
@@ -639,6 +677,7 @@ class SpineDivideWork(BaseWorkClass):
                                     wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
 
         if self.dialog.ShowModal() == wx.ID_OK:
+            self.body = None
             self.body = function.body_enter(self.dialog.GetFilename())
 
             self.need_work()
@@ -653,6 +692,8 @@ class SpineDivideWork(BaseWorkClass):
             self.need_work()
 
     def work(self):
+        self.bodies.clear()
+
         pattern = re.compile(r'.+?\.png\nsize: \d+,\d+\nformat: \w+\nfilter: Linear,Linear\nrepeat: none')
         cuter = pattern.findall(self.cuter)
 
@@ -666,7 +707,8 @@ class SpineDivideWork(BaseWorkClass):
 
         pattern = re.compile(r'\w+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+')
         bodies = pattern.findall(self.cuter)
-        root = self.frame.m_treeCtrl_boys.AddRoot(name)
+        root = self.frame.m_treeCtrl_boys.AppendItem(self.root, name)
+        self.frame.m_treeCtrl_boys.Expand(self.root)
         for body in bodies:
             body = body.split("\n  ")
 
@@ -681,10 +723,20 @@ class SpineDivideWork(BaseWorkClass):
                                 'rotate': rotate,
                                 'pic': cuter})
             body = self.frame.m_treeCtrl_boys.AppendItem(root, 'name: ' + body[0])
-            self.frame.m_treeCtrl_boys.AppendItem(body, "xy: " + json.dumps(xy))
-            self.frame.m_treeCtrl_boys.AppendItem(body, 'size: ' + json.dumps(size))
+            xy_item = self.frame.m_treeCtrl_boys.AppendItem(body, "[X，Y]: " + json.dumps(xy))
+            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "X：%d" % (xy[0]))
+            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "Y：%d" % (xy[1]))
+            size_item = self.frame.m_treeCtrl_boys.AppendItem(body, 'size: ' + json.dumps(size))
+            self.frame.m_treeCtrl_boys.AppendItem(size_item, "wide：%d" % (size[0]))
+            self.frame.m_treeCtrl_boys.AppendItem(size_item, "high：%d" % (size[1]))
+
             self.frame.m_treeCtrl_boys.AppendItem(body, 'rotate: ' + json.dumps(rotate))
-            self.frame.m_treeCtrl_boys.AppendItem(body, 'pic')
+
+            self.frame.m_bpButton_ex_spine.Enable(True)
+            self.frame.m_bpButton_cut_way.Enable(False)
+            self.frame.m_bpButton_body.Enable(False)
+
+            self.frame.m_staticText_now.SetLabel("OK")
 
     def pic_open(self):
         print(self.frame.m_treeCtrl_boys.GetSelection())
@@ -697,8 +749,25 @@ class SpineDivideWork(BaseWorkClass):
             path = os.path.join(self.dialog.GetPath(), self.name)
             os.makedirs(path, exist_ok=True)
             for val in self.bodies:
-                path_save=os.path.join(path, f"{val['name']}.png")
+                path_save = os.path.join(path, f"{val['name']}.png")
                 val['pic'].save(path_save)
+
+            self.frame.m_gauge_ex_spine.SetValue(100)
+            self.frame.m_bpButton_ex_spine.Enable(False)
+
+    def reset(self):
+
+        self.cuter = ''
+
+        self.body: PIL.Image = None
+
+        self.bodies = []
+
+        self.name = ''
+
+        self.frame.m_bpButton_ex_spine.Enable(False)
+        self.frame.m_bpButton_cut_way.Enable(True)
+        self.frame.m_bpButton_body.Enable(True)
 
 
 class EncryptImage(BaseWorkClass):
