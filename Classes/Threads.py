@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import threading
+import time
 
 import wx
 
@@ -11,7 +12,8 @@ from Functions import function
 
 class RestoreThread(threading.Thread):
 
-    def __init__(self, id_thread, name, list_pic, form, name_dic, mesh_list_path_dir, tex_list_path_dir, save_path,
+    def __init__(self, id_thread, name, list_pic, form, name_dic, mesh_list_path_dir,
+                 tex_list_path_dir, save_path,
                  setting, unable_restore_list, full):
         threading.Thread.__init__(self)
         self.threadID = id_thread
@@ -45,6 +47,8 @@ class RestoreThread(threading.Thread):
                 else:
                     text = self.names[name]
                 self.format.m_staticText_now.SetLabel("当前：%s" % text)
+                choice = self.format.m_listBox_log.Append("开始第%d个！为%s 类型-直接还原" % (self.index, text))
+                self.format.m_listBox_log.SetSelection(choice)
                 if self.setting["export_with_cn"]:
                     names = self.names
                 else:
@@ -81,24 +85,29 @@ class RestoreThread(threading.Thread):
 
                 elif self.setting['div_use'] == 1:
                     list_work = self.setting['divide_list']
-                    save_path = ''
-                    for val in list_work[1:]:
-                        pattern = re.compile(val['pattern'])
-                        if pattern.match(name) is not None:
-                            save_path = f"{self.save_path}\\{val['dir']}"
-                            break
-                        else:
-                            save_path = ''
+                    paths = filter(lambda x: re.match(x['pattern'], name), list_work[1:])
+                    paths = list(map(lambda x: f"{self.save_path}\\{x['dir']}", paths))
 
-                    if save_path == '':
+                    if not paths:
                         save_path = f"{self.save_path}\\其他"
+                    else:
+                        save_path = paths[0]
 
                 else:
                     save_path = self.save_path
 
                 os.makedirs(save_path, exist_ok=True)
 
+                time_1 = time.time()
                 function.restore_tool(name, names, self.mesh_list_path_dir, self.tex_list_path_dir, save_path)
+                time_1 = time.time() - time_1
+                self.format.m_listBox_log.Append("      tex文件：%s" % self.tex_list_path_dir[name])
+                self.format.m_listBox_log.Append("      mesh文件：%s" % self.mesh_list_path_dir[name])
+                self.format.m_listBox_log.Append("      保存位置：%s" % save_path + "\\" + text + '.png')
+
+                self.format.m_listBox_log.Append("完成%s！用时：%.2fs" % (text, time_1))
+                choice = self.format.m_listBox_log.Append("")
+                self.format.m_listBox_log.SetSelection(choice)
 
                 val_percent = str(round(100 * (self.index / len(self.list)), 2))
                 val = function.re_int(100 * (self.index / len(self.list)))

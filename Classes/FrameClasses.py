@@ -274,6 +274,7 @@ class Setting(noname.MyDialog_Setting):
         self.auto_open_choice_pic = setting_dic["full"]["auto_open"]
         self.finish_exit = setting_dic["full"]["finish_exit"]
         self.clear_list = setting_dic["full"]['clear_list']
+        self.save_all = setting_dic["full"]['save_all']
 
         self.setting = setting_dic
         self.default = default
@@ -350,6 +351,8 @@ class Setting(noname.MyDialog_Setting):
         self.m_checkBox4_finish_exit.SetValue(self.finish_exit)
         self.m_checkBox_clear.SetValue(self.clear_list)
 
+        self.m_checkBox_save_all.SetValue(not self.save_all)
+
         self.m_dirPicker_export.SetPath(self.export)
 
         self.m_toggleBtn_lock.SetValue(self.lock)
@@ -377,6 +380,8 @@ class Setting(noname.MyDialog_Setting):
         self.setting["full"]["auto_open"] = self.m_checkBox_open_temp.GetValue()
         self.setting["full"]["finish_exit"] = self.m_checkBox4_finish_exit.GetValue()
         self.setting["full"]['clear_list'] = self.m_checkBox_clear.GetValue()
+
+        self.setting["full"]['save_all'] = self.m_checkBox_save_all.GetValue()
 
         self.lock = self.default['lock'] = self.m_toggleBtn_lock.GetValue()
 

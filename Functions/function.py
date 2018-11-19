@@ -1,6 +1,11 @@
+import re
+
 import PIL.Image
 import numpy as np
 import os
+import functools
+
+functools.partial(os.makedirs, exist_ok=True)
 
 
 def get_longest(array_enter):
@@ -118,115 +123,97 @@ def re_int(num):
     return round(num)
 
 
-def az_paint_restore(mesh_path: str, pic_path: str):
+def cut_pic_builder(size):
     """
 
-    :param mesh_path:the path of mesh file
-    :param pic_path: the path of tex file
-    :return: PIL.Image->restored image
+    :param size: the input img size(wide,high)
+    :return: a callable func
     """
-    # 用于存储相应参数
-    blit_place = [None]
-    cut_place = [None]
-    restore_way = []
-    printer = []
 
-    # 文件信息读取，分类
-    with open(mesh_path, 'r', encoding="utf-8")as info:
-        for msg in info.readlines():
+    def cut_pic(info):
+        a = [round(float(info[1]) * size[0]), round((1 - float(info[2])) * size[1])]
 
-            if msg[0] == "g":
-                continue
+        return a
 
-            elif msg[0] == "v" and msg[1] != 't':
-                msg = msg[:-3]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [int(msg[0]), int(msg[1])]
-                blit_place.append(msg)
+    return cut_pic
 
-            elif msg[0] == "v" and msg[1] == "t":
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = msg[1:]
-                msg = [float(msg[0]), float(msg[1])]
-                cut_place.append(msg)
 
-            elif msg[0] == 'f':
-                msg = msg[:-1]
-                msg = msg.split(" ")
-                msg = [int(msg[1].split('/')[0]),
-                       int(msg[2].split('/')[0]),
-                       int(msg[3].split('/')[0]),
-                       ]
-                restore_way.append(msg)
+def draw(pic, pos):
+    pic.paste(pos[0], pos[1])
+    return pic
 
-    # 拼图准备
-    temp = ([], [])
-    for num in blit_place[1:]:
-        temp[0].append(num[0])
-        temp[1].append(num[1])
 
-    X = (max(temp[0]) - min(temp[0]))
-    Y = (max(temp[1]) - min(temp[1]))
+def division_builder(val1, val2, pic):
+    def division(val):
+        print_p = [val1[val[0] - 1], val1[val[1] - 1], val1[val[2] - 1]]
+        cut_p = [val2[val[0] - 1], val2[val[1] - 1], val2[val[2] - 1]]
 
-    del temp
+        print_area = [min(print_p[0][0], print_p[1][0], print_p[2][0]),
+                      min(print_p[0][1], print_p[1][1], print_p[2][1])]
 
-    # 背景准备
+        cut_x = round(min(cut_p[0][0], cut_p[1][0], cut_p[2][0]))
+        cut_y = round(min((cut_p[0][1], cut_p[1][1], cut_p[2][1])))
 
-    bg = PIL.Image.new('RGBA', (X, Y), (255, 255, 255, 0))
-
-    # 图片加载
-    img = PIL.Image.open(pic_path, 'r')
-
-    width = img.width
-    height = img.height
-
-    # 坐标镜像处理
-
-    for num in range(len(blit_place) - 1):
-        blit_place[num + 1][0] = -blit_place[num + 1][0]
-        blit_place[num + 1][1] = Y - blit_place[num + 1][1]
-        cut_place[num + 1][0] = cut_place[num + 1][0]
-        cut_place[num + 1][1] = 1 - cut_place[num + 1][1]
-    pos = [[], []]
-    for num in blit_place[1:]:
-        pos[0].append(num[0])
-        pos[1].append(num[1])
-
-    move_x = min(pos[0])
-    move_y = min(pos[1])
-
-    # 切割模块
-    for index in restore_way:
-        # 索引，拆分
-        print_p = [blit_place[index[0]], blit_place[index[1]], blit_place[index[2]]]
-        cut_p = [cut_place[index[0]], cut_place[index[1]], cut_place[index[2]]]
-
-        print_area = [min(print_p[0][0], print_p[1][0], print_p[2][0]) - move_x,
-                      min(print_p[0][1], print_p[1][1], print_p[2][1]) - move_y]
-
-        cut_x = re_int(min(cut_p[0][0], cut_p[1][0], cut_p[2][0]) * width)
-        cut_y = re_int(min((cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
-
-        end_x = re_int(
-            (max(cut_p[0][0], cut_p[1][0], cut_p[2][0])) * width)
-        end_y = re_int(
-            (max(cut_p[0][1], cut_p[1][1], cut_p[2][1])) * height)
+        end_x = round(
+            (max(cut_p[0][0], cut_p[1][0], cut_p[2][0])))
+        end_y = round(
+            (max(cut_p[0][1], cut_p[1][1], cut_p[2][1])))
 
         cut_size = (cut_x, cut_y, end_x, end_y)
 
-        cut = img.crop(cut_size)
+        cut = pic.crop(cut_size)
+        return cut, print_area
 
-        printer.append([print_area, cut])
+    return division
 
-    # 开始拼图
-    num = 0
-    for index in printer:
-        bg.paste(index[1], index[0])
-        num += 1
 
-    return bg
+def ex_port(mesh_path: str, tex_path: str):
+    """
+    a higher func version for extract AzurLane painting
+    :param mesh_path: mesh_file address,str
+    :param tex_path: texture file address
+    :return: PIL.Image -> the final pic
+    """
+    img = PIL.Image.open(tex_path)
+
+    size = img.size
+
+    tex_cuter = cut_pic_builder(size)
+
+    with open(mesh_path, 'r', encoding='utf-8')as file:
+        files_line = file.readlines()
+
+    draw_pic = filter(lambda x: re.match(r'^v\s-*\d+\s-*\d+\s-*\d+\n$', x), files_line)
+    tex_pos = filter(lambda x: re.match(r'^vt\s0\.\d+\s0\.\d+\n$', x), files_line)
+    print_pos = filter(lambda x: re.match(r'^f\s\d+/\d+/\d+\s\d+/\d+/\d+\s\d+/\d+/\d+\n$', x), files_line)
+
+    draw_pic = map(lambda x: re.split(r'\D+', x), draw_pic)
+    tex_pos = map(lambda x: re.split(r'[^0-9.]+', x), tex_pos)
+    print_pos = map(lambda x: re.split(r'\D+', x), print_pos)
+
+    draw_pic = list(map(lambda x: [int(x[1]), int(x[2])], draw_pic))
+    tex_pos = list(map(tex_cuter, tex_pos))
+    print_pos = list(map(lambda x: [int(x[1]), int(x[4]), int(x[7])], print_pos))
+
+    poses = np.array(draw_pic)
+
+    x_pic = (max(poses[:, 0]))
+    y_pic = (max(poses[:, 1]))
+
+    pic = PIL.Image.new("RGBA", (x_pic, y_pic), (255, 255, 255, 0))
+
+    draw_pic = list(map(lambda x: [(x[0]), (y_pic - x[1])], draw_pic))
+
+    division = division_builder(draw_pic, tex_pos, img)
+
+    restore = list(map(division, print_pos))
+
+    pic_out = functools.reduce(draw, restore, pic)
+
+    return pic_out
+
+
+az_paint_restore = ex_port
 
 
 def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
@@ -247,7 +234,7 @@ def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
 def restore_tool_one(mesh_path, pic_path, save_as, ):
     """拼图用的函数"""
 
-    pic = az_paint_restore(mesh_path=mesh_path, pic_path=pic_path)
+    pic = az_paint_restore(mesh_path=mesh_path, tex_path=pic_path)
 
     assert isinstance(save_as, str)
     pic.save(save_as)

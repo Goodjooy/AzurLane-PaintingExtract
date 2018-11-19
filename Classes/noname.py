@@ -271,6 +271,18 @@ class MyFrame1 ( wx.Frame ):
 		sbSizer3 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"information" ), wx.VERTICAL )
 
 		self.m_notebook_info = wx.Notebook( sbSizer3.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.NB_FIXEDWIDTH )
+		self.m_panel24 = wx.Panel( self.m_notebook_info, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizer45 = wx.BoxSizer( wx.VERTICAL )
+
+		m_listBox_logChoices = []
+		self.m_listBox_log = wx.ListBox( self.m_panel24, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox_logChoices, 0 )
+		bSizer45.Add( self.m_listBox_log, 1, wx.ALL|wx.EXPAND, 5 )
+
+
+		self.m_panel24.SetSizer( bSizer45 )
+		self.m_panel24.Layout()
+		bSizer45.Fit( self.m_panel24 )
+		self.m_notebook_info.AddPage( self.m_panel24, u"日志", False )
 		self.m_panel3 = wx.Panel( self.m_notebook_info, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer6 = wx.BoxSizer( wx.VERTICAL )
 
@@ -861,7 +873,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_scrolledWindow4.SetSizer( bSizer28 )
 		self.m_scrolledWindow4.Layout()
 		bSizer28.Fit( self.m_scrolledWindow4 )
-		self.m_notebook3.AddPage( self.m_scrolledWindow4, u"欢迎", False )
+		self.m_notebook3.AddPage( self.m_scrolledWindow4, u"欢迎", True )
 		self.m_scrolledWindow7 = wx.ScrolledWindow( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.m_scrolledWindow7.SetScrollRate( 5, 5 )
 		bSizer22 = wx.BoxSizer( wx.VERTICAL )
@@ -929,11 +941,11 @@ class MyDialog_Setting ( wx.Dialog ):
 
 		self.m_checkBox_in_cn = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"以中文名导出", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_checkBox_in_cn.SetValue(True)
-		sbSizer8.Add( self.m_checkBox_in_cn, 0, wx.ALL|wx.EXPAND, 5 )
+		sbSizer8.Add( self.m_checkBox_in_cn, 0, wx.ALL, 5 )
 
 		self.m_checkBox_az_dir = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"在导出文件夹内新建导出文件夹", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_checkBox_az_dir.SetValue(True)
-		sbSizer8.Add( self.m_checkBox_az_dir, 0, wx.ALL|wx.EXPAND, 5 )
+		sbSizer8.Add( self.m_checkBox_az_dir, 0, wx.ALL, 5 )
 
 		self.m_staticline4 = wx.StaticLine( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		sbSizer8.Add( self.m_staticline4, 0, wx.EXPAND |wx.ALL, 5 )
@@ -1073,6 +1085,10 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_checkList_az_limits = wx.CheckListBox( sbSizer101.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkList_az_limitsChoices, wx.LB_HSCROLL|wx.LB_NEEDED_SB|wx.LB_SINGLE )
 		sbSizer101.Add( self.m_checkList_az_limits, 1, wx.ALL|wx.EXPAND, 5 )
 
+		self.m_checkBox_save_all = wx.CheckBox( sbSizer101.GetStaticBox(), wx.ID_ANY, u"当满足多种分类方案只保存至第一个符合的", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_checkBox_save_all.SetValue(True)
+		sbSizer101.Add( self.m_checkBox_save_all, 0, wx.ALL, 5 )
+
 
 		sbSizer19.Add( sbSizer101, 1, wx.EXPAND, 5 )
 
@@ -1101,7 +1117,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_panel20.SetSizer( bSizer32 )
 		self.m_panel20.Layout()
 		bSizer32.Fit( self.m_panel20 )
-		self.m_notebook3.AddPage( self.m_panel20, u"设置-碧蓝航线", True )
+		self.m_notebook3.AddPage( self.m_panel20, u"设置-碧蓝航线", False )
 		self.m_panel12 = wx.Panel( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gSizer18 = wx.GridSizer( 0, 3, 0, 0 )
 
@@ -1345,6 +1361,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_bpButton_down.Bind( wx.EVT_BUTTON, self.az_down )
 		self.m_checkList_az_limits.Bind( wx.EVT_LISTBOX, self.choice )
 		self.m_checkList_az_limits.Bind( wx.EVT_LISTBOX_DCLICK, self.change_pattern )
+		self.m_checkBox_save_all.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_bpButton71.Bind( wx.EVT_BUTTON, self.type_ch )
 		self.m_listBox_new.Bind( wx.EVT_LISTBOX_DCLICK, self.open_add_name )
 		self.m_searchCtrl2.Bind( wx.EVT_SEARCHCTRL_SEARCH_BTN, self.searching )
@@ -1429,6 +1446,7 @@ class MyDialog_Setting ( wx.Dialog ):
 
 	def change_pattern( self, event ):
 		event.Skip()
+
 
 
 	def open_add_name( self, event ):
