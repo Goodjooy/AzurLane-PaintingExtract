@@ -12,31 +12,32 @@ from Functions import function
 
 class RestoreThread(threading.Thread):
 
-    def __init__(self, id_thread, name, list_pic, form, name_dic, mesh_list_path_dir,
-                 tex_list_path_dir, save_path,
-                 setting, unable_restore_list, full):
+    def __init__(self, id_thread, name, work_class):
         threading.Thread.__init__(self)
+
+        self.worker = work_class
+
         self.threadID = id_thread
 
         self.name = name
 
         self.index = 0
 
-        self.list = list_pic
+        self.list = work_class.restore_list
 
-        self.format = form
-        self.names = name_dic
+        self.format = work_class.form
+        self.names = work_class.names
 
-        self.mesh_list_path_dir = mesh_list_path_dir
-        self.tex_list_path_dir = tex_list_path_dir
-        self.save_path = save_path
+        self.mesh_list_path_dir = work_class.mesh_list_path_dir
+        self.tex_list_path_dir = work_class.tex_list_path_dir
+        self.save_path = work_class.save_path,
 
         self.stop = False
 
-        self.setting = setting
+        self.setting = work_class.setting
 
-        self.unable_restore_list = unable_restore_list
-        self.full = full
+        self.unable_restore_list = work_class.unable_restore_list
+        self.full = work_class.full
 
     def run(self):
         for self.index in range(len(self.list)):
@@ -47,7 +48,7 @@ class RestoreThread(threading.Thread):
                 else:
                     text = self.names[name]
                 self.format.m_staticText_now.SetLabel("当前：%s" % text)
-                choice = self.format.m_listBox_log.Append("开始第%d个！为%s 类型-直接还原" % (self.index, text))
+                choice = self.format.m_listBox_log.Append("开始第%d个！为%s 类型-直接还原" % (self.index + 1, text))
                 self.format.m_listBox_log.SetSelection(choice)
                 if self.setting["export_with_cn"]:
                     names = self.names
@@ -99,13 +100,17 @@ class RestoreThread(threading.Thread):
                 os.makedirs(save_path, exist_ok=True)
 
                 time_1 = time.time()
-                function.restore_tool(name, names, self.mesh_list_path_dir, self.tex_list_path_dir, save_path)
+                is_good, info = function.restore_tool(name, names, self.mesh_list_path_dir, self.tex_list_path_dir,
+                                                      save_path)
                 time_1 = time.time() - time_1
                 self.format.m_listBox_log.Append("      tex文件：%s" % self.tex_list_path_dir[name])
                 self.format.m_listBox_log.Append("      mesh文件：%s" % self.mesh_list_path_dir[name])
                 self.format.m_listBox_log.Append("      保存位置：%s" % save_path + "\\" + text + '.png')
+                if not is_good:
+                    self.format.append_error(info)
 
-                self.format.m_listBox_log.Append("完成%s！用时：%.2fs" % (text, time_1))
+                self.format.m_listBox_log.Append("%s，用时：%.2fs" % (info, time_1))
+
                 choice = self.format.m_listBox_log.Append("")
                 self.format.m_listBox_log.SetSelection(choice)
 
@@ -143,6 +148,9 @@ class RestoreThread(threading.Thread):
         if self.full['finish_exit']:
             self.format.exit(True)
 
+        if self.format.any_error():
+            self.format.m_notebook_info.SetSelection(2)
+
     def stop_(self, stop: bool):
         self.stop = stop
 
@@ -174,27 +182,34 @@ class QuickRestore(threading.Thread):
         self.back = back
 
     def run(self):
-        size = tuple(self.father.m_bitmap_show.GetSize())
-        if not self.no_restore:
-            pic = function.restore_tool_no_save(self.mesh, self.tex, size)
+        try:
+            size = tuple(self.father.m_bitmap_show.GetSize())
+            if not self.no_restore:
+                pic = function.restore_tool_no_save(self.mesh, self.tex, size)
 
-        else:
-            pic = function.pic_transform(self.tex, size)
+            else:
+                pic = function.pic_transform(self.tex, size)
 
-        pic.save("%s\\temp.png" % self.path)
-        temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
+            pic.save("%s\\temp.png" % self.path)
+            temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
 
-        temp = temp.ConvertToBitmap()
-        self.father.m_bitmap_show.ClearBackground()
-        self.father.m_bitmap_show.SetBitmap(temp)
+            temp = temp.ConvertToBitmap()
+            self.father.m_bitmap_show.ClearBackground()
+            self.father.m_bitmap_show.SetBitmap(temp)
 
-        self.father.m_notebook_info.SetSelection(2)
+            self.father.m_notebook_info.SetSelection(1)
 
-        # time.sleep(3)
-        # if
-        # self.father.m_notebook_info.SetSelection(self.back)
-        if self.full["auto_open"] and False:
-            os.system(r'start ' + "%s\\temp.png" % self.path)
+            # time.sleep(3)
+            # if
+            # self.father.m_notebook_info.SetSelection(self.back)
+            if self.full["auto_open"] and False:
+                os.system(r'start ' + "%s\\temp.png" % self.path)
+
+        except RuntimeError as info:
+            self.father.append_error(info)
+
+        if self.father.any_error():
+            self.father.m_notebook_info.SetSelection(2)
 
 
 class BackInfo(threading.Thread):

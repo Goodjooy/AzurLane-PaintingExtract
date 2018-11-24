@@ -167,7 +167,7 @@ def division_builder(val1, val2, pic):
     return division
 
 
-def ex_port(mesh_path: str, tex_path: str):
+def az_paint_restore(mesh_path: str, tex_path: str):
     """
     a higher func version for extract AzurLane painting
     :param mesh_path: mesh_file address,str
@@ -191,44 +191,47 @@ def ex_port(mesh_path: str, tex_path: str):
     tex_pos = map(lambda x: re.split(r'[^0-9.]+', x), tex_pos)
     print_pos = map(lambda x: re.split(r'\D+', x), print_pos)
 
-    draw_pic = list(map(lambda x: [int(x[1]), int(x[2])], draw_pic))
-    tex_pos = list(map(tex_cuter, tex_pos))
-    print_pos = list(map(lambda x: [int(x[1]), int(x[4]), int(x[7])], print_pos))
+    draw_pic = (map(lambda x: [int(x[1]), int(x[2])], draw_pic))
+    tex_pos = (map(tex_cuter, tex_pos))
+    print_pos = (map(lambda x: [int(x[1]), int(x[4]), int(x[7])], print_pos))
+    draw_pic = list(draw_pic)
+    pos = draw_pic.copy()
+    x_poses, y_poses = zip(*pos)
 
-    poses = np.array(draw_pic)
-
-    x_pic = (max(poses[:, 0]))
-    y_pic = (max(poses[:, 1]))
+    x_pic = (max(x_poses))
+    y_pic = (max(y_poses))
 
     pic = PIL.Image.new("RGBA", (x_pic, y_pic), (255, 255, 255, 0))
 
-    draw_pic = list(map(lambda x: [(x[0]), (y_pic - x[1])], draw_pic))
+    draw_pic = (map(lambda x: [(x[0]), (y_pic - x[1])], draw_pic))
 
-    division = division_builder(draw_pic, tex_pos, img)
+    division = division_builder(list(draw_pic), list(tex_pos), img)
 
-    restore = list(map(division, print_pos))
+    restore = (map(division, print_pos))
 
     pic_out = functools.reduce(draw, restore, pic)
 
     return pic_out
 
 
-az_paint_restore = ex_port
-
-
 def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
     """拼图用的函数
     """
-
-    pic = az_paint_restore(mesh_in_path[ship_name], pic_in_path[ship_name])
-
     try:
-        names[ship_name]
-    except KeyError:
-        name = ship_name
+        pic = az_paint_restore(mesh_in_path[ship_name], pic_in_path[ship_name])
+
+        try:
+            names[ship_name]
+        except KeyError:
+            name = ship_name
+        else:
+            name = names[ship_name]
+        pic.save("%s\\%s.png" % (save_area, name))
+    except RuntimeError as info:
+        return False, info
+
     else:
-        name = names[ship_name]
-    pic.save("%s\\%s.png" % (save_area, name))
+        return True, "成功还原：%s" % name
 
 
 def restore_tool_one(mesh_path, pic_path, save_as, ):

@@ -1,3 +1,4 @@
+import os
 import re
 import os.path as op
 
@@ -30,7 +31,7 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
             num = len(paths)
         else:
             dict_path = {}
-            num = len(paths)
+            num = len(set_list)
 
         if clear_list:
             set_list.clear()
@@ -42,7 +43,7 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
 
             for path in paths:
 
-                if pattern_re.match(path) is not None:
+                if pattern_re.match(os.path.basename(path)) is not None:
                     num += 1
                     if not is_file:
                         name = path
@@ -65,9 +66,12 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
                 return False, '导入完成，无新增项！'
         else:
             return False, '导入失败，无导入项！'
-    except (TypeError, KeyError, RuntimeError):
-        return False, '导入失败，发生错误！'
+    except (TypeError, KeyError, RuntimeError)as info:
+        return False, '导入失败，发生错误！%s' % info
     else:
         return True, '导入成功！ 成功导入%d个！' % num
 
 
+def all_dir_files(val1: list, val2: list):
+    val1.extend(val2)
+    return val1

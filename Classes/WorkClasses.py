@@ -1,3 +1,5 @@
+import functools
+
 import PIL.Image
 import json
 import os
@@ -84,6 +86,8 @@ class PaintingWork(BaseWorkClass):
         self.search_pass_index = []
         self.search_unable_index = []
 
+        self.error_list = []
+
         self.restore_list = []
 
         self.setting = setting["azur_lane"]
@@ -97,12 +101,14 @@ class PaintingWork(BaseWorkClass):
         self.pattern_tex = re.compile(self.setting['tex_limit'])
         self.pattern_mesh = re.compile(self.setting['mesh_limit'])
 
-        self.restore = Threads.RestoreThread(1, 'restore', self.restore_list, self.form, self.names,
-                                             self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path,
-                                             self.setting, full=self.full, unable_restore_list=self.unable_restore_list)
+        self.restore = None
 
         self.able_add = False
+
         # file load method
+
+    def any_error(self):
+        return self.error_list != []
 
     def is_able_add(self):
         return self.able_add
@@ -279,6 +285,42 @@ class PaintingWork(BaseWorkClass):
         self.info_check()
 
         return address
+
+    def drop_work(self, file_names):
+        try:
+            self.form.m_staticText_load_tex.SetLabel('开始')
+            self.form.m_staticText_mesh_load.SetLabel('开始')
+
+            file_names = (filter(lambda x: os.path.isfile(x), file_names))
+
+            paths = list(filter(lambda x: re.match(r'^UISprite\s#\d+\.png$', os.path.basename(x)) is None, file_names))
+
+            returned_tex, tex_info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
+                                                     self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex,
+                                                     True, '',
+                                                     self.names)
+
+            returned_mesh, mesh_info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
+                                                       self.mesh_list_path_dir, self.full['clear_list'],
+                                                       self.pattern_mesh, True, "-mesh", self.names)
+            if returned_tex:
+                self.form.m_gauge_tex_load.SetValue(100)
+
+                self.form.m_listBox_tex.Set(self.tex_name_china)
+            self.form.m_staticText_load_tex.SetLabel(tex_info)
+            if returned_mesh:
+                self.form.m_gauge_mesh_load.SetValue(100)
+
+                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+            self.form.m_staticText_mesh_load.SetLabel(mesh_info)
+
+            self.info_check()
+
+        except RuntimeError as info:
+            return False, info
+
+        else:
+            return True, ''
 
     # choice
     def mesh_choice(self):
@@ -549,10 +591,7 @@ class PaintingWork(BaseWorkClass):
                 self.able_restore += 1
                 self.able_restore_list.append(name)
 
-        self.restore = Threads.RestoreThread(1, 'restore', self.restore_list, self.form, self.names,
-                                             self.mesh_list_path_dir, self.tex_list_path_dir, self.save_path,
-                                             self.setting, full=self.full, unable_restore_list=self.unable_restore_list)
-
+        self.restore = Threads.RestoreThread(1, 'restore', self)
         self.form.m_staticText_all.SetLabel("总进度：%s %%" % '0')
         self.form.m_gauge_all.SetValue(0)
 
@@ -1022,23 +1061,14 @@ class ChangeName:
         return self.names
 
 
-class LogViewer(BaseWorkClass):
-    def __init__(self, frame):
-        super(LogViewer, self).__init__(frame)
-        self.log_list = []
+class FileDropLoad(wx.FileDropTarget):
+    def __init__(self, work, parent):
+        super(FileDropLoad, self).__init__()
+        self.work = work
+        self.parent = parent
 
-    def __getattr__(self, item):
-        return '%s 不存在' % item
-
-    def init_worker(self, val: str, timer: float):
-        self.log_list.append(Log(self.frame, timer, val))
-
-
-class Log(BaseWorkClass):
-    def __init__(self, frame, time_in, string):
-        super(Log, self).__init__(frame)
-        self.time = time_in
-        self.string = string
-
-    def show_info(self):
-        return f'{self.time}-{self.string}'
+    def OnDropFiles(self, x, y, filenames):
+        val, info = self.work.drop_work(filenames)
+        if not val:
+            self.parent.append_error(info)
+        return val

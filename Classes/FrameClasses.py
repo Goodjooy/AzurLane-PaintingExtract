@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import time
 
 import wx
@@ -41,6 +42,20 @@ class MainFrame(noname.MyFrame1):
         self.m_listbook_in.SetSelection(0)
 
         self.choice = 0
+
+        self.drop_load_tex = WorkClasses.FileDropLoad(self.painting, self)
+        self.drop_load_mesh = WorkClasses.FileDropLoad(self.painting, self)
+        self.m_listBox_tex.SetDropTarget(self.drop_load_tex)
+        self.m_listBox_mesh.SetDropTarget(self.drop_load_mesh)
+
+        self.error_list = []
+
+    def append_error(self, error_info):
+        self.m_listBox_errors.Append(error_info)
+        self.error_list.append(error_info)
+
+    def any_error(self):
+        return self.error_list != []
 
     # file load method
     # azur lane
@@ -152,8 +167,9 @@ class MainFrame(noname.MyFrame1):
         if thread_exit:
             time.sleep(2)
             self.Destroy()
+            sys.exit()
         else:
-            if self.painting.restore.is_alive():
+            if self.painting.restore is not None and self.painting.restore.is_alive():
                 message = wx.MessageBox("还未全部完成，确认退出？", "警告", wx.YES_NO)
 
                 if message == wx.YES:
@@ -163,6 +179,7 @@ class MainFrame(noname.MyFrame1):
                             time.sleep(1)
 
                     self.Destroy()
+                    sys.exit()
                 else:
                     pass
             else:
@@ -171,6 +188,7 @@ class MainFrame(noname.MyFrame1):
                 if message == wx.YES:
 
                     self.Destroy()
+                    sys.exit()
                 elif message == wx.CANCEL:
                     pass
 
@@ -588,18 +606,18 @@ class Setting(noname.MyDialog_Setting):
         if self.m_radioBox_type_use.GetSelection() == 0:
             choice = self.m_radioBox_im.GetSelection()
             tex = [
-                r'^.+\.[Pp][Nn][Gg]$',
-                r'^.+_\d\.[Pp][Nn][Gg]$',
-                r'^.+_[Hh]\.[Pp][Nn][Gg]$',
-                r'^.+_[Gg]\.[Pp][Nn][Gg]$',
-                r'^(.+\\)*[^_\s]+(_younv)*\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_\d\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_[Hh]\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_[Gg]\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+(_younv)*\.[Pp][Nn][Gg]$',
             ]
             mesh = [
-                r'^.+-mesh\.[oO][Bb][Jj]$',
-                r'^.+_\d-mesh\.[oO][Bb][Jj]$',
-                r'^.+_[Hh]-mesh\.[oO][Bb][Jj]$',
-                r'^.+_[Gg]-mesh\.[oO][Bb][Jj]$',
-                r'^(.+\\)*[^_\s]+(_younv)*-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_\d-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_[Hh]-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_[Gg]-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+(_younv)*-mesh\.[oO][Bb][Jj]$',
             ]
             if choice == 0:
                 self.m_textCtrl_tex_limit.SetLabel(tex[0])
@@ -622,11 +640,11 @@ class Setting(noname.MyDialog_Setting):
         self.m_bpButton6_default_mesh.Enable(False)
 
     def type_ch(self, event):
-        if self.m_simplebook2.GetSelection() == 0:
-            self.m_simplebook2.SetSelection(1)
+        if self.m_simplebook4.GetSelection() == 0:
+            self.m_simplebook4.SetSelection(1)
 
-        elif self.m_simplebook2.GetSelection() == 1:
-            self.m_simplebook2.SetSelection(0)
+        elif self.m_simplebook4.GetSelection() == 1:
+            self.m_simplebook4.SetSelection(0)
 
     def in_file(self, event):
         self.encrypt.in_file()
