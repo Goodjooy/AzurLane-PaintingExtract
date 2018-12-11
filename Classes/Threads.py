@@ -48,7 +48,7 @@ class RestoreThread(threading.Thread):
                 else:
                     text = self.names[name]
                 self.format.m_staticText_now.SetLabel("当前：%s" % text)
-                choice = self.format.m_listBox_log.Append("开始第%d个！为%s 类型-直接还原" % (self.index + 1, text))
+                choice = self.format.m_listBox_log.Append("开始第%d个！为：%s 类型-直接还原" % (self.index + 1, text))
                 self.format.m_listBox_log.SetSelection(choice)
                 if self.setting["export_with_cn"]:
                     names = self.names

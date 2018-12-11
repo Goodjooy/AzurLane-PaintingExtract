@@ -1,4 +1,5 @@
 import functools
+import threading
 
 import PIL.Image
 import json
@@ -286,10 +287,15 @@ class PaintingWork(BaseWorkClass):
 
         return address
 
-    def drop_work(self, file_names):
+    def drop_work(self, file_names, ):
         try:
+            file_names = list(file_names)
             self.form.m_staticText_load_tex.SetLabel('开始')
             self.form.m_staticText_mesh_load.SetLabel('开始')
+
+            dir_name = (filter(lambda x: not os.path.isfile(x), file_names))
+            dir_name = map(lambda x: function.all_file_path(x)[1].values(), dir_name)
+            list(map(lambda x: file_names.extend(x), dir_name))
 
             file_names = (filter(lambda x: os.path.isfile(x), file_names))
 
@@ -321,6 +327,13 @@ class PaintingWork(BaseWorkClass):
 
         else:
             return True, ''
+
+    def open_give(self, dir_address):
+
+
+        files = function.all_file_path(dir_address)[1].values()
+        # print(files)
+        self.drop_work(files)
 
     # choice
     def mesh_choice(self):

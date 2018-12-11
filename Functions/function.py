@@ -54,9 +54,9 @@ def all_file(dir_name):
     dir_list = []
     for file in list_keep:
         if not isfile(dir_name + "\\" + file) and not (file in had):
-            dir_list.append(file)
+            dir_list.append(dir_name + "\\" + file)
         else:
-            out_list.append(file)
+            out_list.append(dir_name + "\\" + file)
     for file in dir_list:
         re_1 = all_file(dir_name + "\\" + file)
         had.extend(re_1)

@@ -945,14 +945,14 @@ class MyDialog_Setting ( wx.Dialog ):
 
 		m_radioBox_type_useChoices = [ u"使用预设的分类方案", u"使用-自定义-分类方案" ]
 		self.m_radioBox_type_use = wx.RadioBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"分类方案", wx.DefaultPosition, wx.DefaultSize, m_radioBox_type_useChoices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox_type_use.SetSelection( 0 )
+		self.m_radioBox_type_use.SetSelection( 1 )
 		self.m_radioBox_type_use.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 
 		sbSizer8.Add( self.m_radioBox_type_use, 0, wx.ALL|wx.EXPAND, 5 )
 
 		m_radioBox_az_typeChoices = [ u"仅导出可还原立绘", u"导出全部（包括不可还原）" ]
 		self.m_radioBox_az_type = wx.RadioBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"导出立绘类型", wx.DefaultPosition, wx.DefaultSize, m_radioBox_az_typeChoices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox_az_type.SetSelection( 1 )
+		self.m_radioBox_az_type.SetSelection( 0 )
 		sbSizer8.Add( self.m_radioBox_az_type, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_checkBox_in_cn = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"以中文名导出", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -981,6 +981,9 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_checkBox_clear = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"导入前清空列表", wx.DefaultPosition, wx.DefaultSize, 0 )
 		sbSizer8.Add( self.m_checkBox_clear, 0, wx.ALL, 5 )
 
+		self.m_checkBox_reg = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"添加到右键菜单", wx.DefaultPosition, wx.DefaultSize, 0 )
+		sbSizer8.Add( self.m_checkBox_reg, 0, wx.ALL, 5 )
+
 
 		self.m_scrolledWindow41.SetSizer( sbSizer8 )
 		self.m_scrolledWindow41.Layout()
@@ -998,7 +1001,7 @@ class MyDialog_Setting ( wx.Dialog ):
 
 		m_radioBox_imChoices = [ u"导入全部", u"仅导入皮肤", u"仅导入婚纱", u"仅导入改造", u"仅导入原皮" ]
 		self.m_radioBox_im = wx.RadioBox( sbSizer9.GetStaticBox(), wx.ID_ANY, u"导入设置", wx.DefaultPosition, wx.DefaultSize, m_radioBox_imChoices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox_im.SetSelection( 4 )
+		self.m_radioBox_im.SetSelection( 1 )
 		sbSizer9.Add( self.m_radioBox_im, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_staticline8 = wx.StaticLine( sbSizer9.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
@@ -1006,7 +1009,7 @@ class MyDialog_Setting ( wx.Dialog ):
 
 		m_radioBox_az_divChoices = [ u"不分类", u"按舰娘名分类", u"按-皮肤-婚纱-原始皮肤分类" ]
 		self.m_radioBox_az_div = wx.RadioBox( sbSizer9.GetStaticBox(), wx.ID_ANY, u"导出分类设置", wx.DefaultPosition, wx.DefaultSize, m_radioBox_az_divChoices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox_az_div.SetSelection( 1 )
+		self.m_radioBox_az_div.SetSelection( 0 )
 		sbSizer9.Add( self.m_radioBox_az_div, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_bpButton7 = wx.BitmapButton( sbSizer9.GetStaticBox(), wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, wx.BU_AUTODRAW|0 )
@@ -1356,12 +1359,14 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_toggleBtn_lock.Bind( wx.EVT_TOGGLEBUTTON, self.lock_address )
 		self.m_radioBox_type_use.Bind( wx.EVT_RADIOBOX, self.change_type )
 		self.m_radioBox_az_type.Bind( wx.EVT_RADIOBOX, self.change )
+		self.m_checkBox_in_cn.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_az_dir.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_autoopen.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_pass_finished.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_open_temp.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox4_finish_exit.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_clear.Bind( wx.EVT_CHECKBOX, self.change )
+		self.m_checkBox_reg.Bind( wx.EVT_CHECKBOX, self.change_add )
 		self.m_radioBox_im.Bind( wx.EVT_RADIOBOX, self.change_input )
 		self.m_radioBox_az_div.Bind( wx.EVT_RADIOBOX, self.change_div )
 		self.m_bpButton7.Bind( wx.EVT_BUTTON, self.type_ch )
@@ -1421,6 +1426,10 @@ class MyDialog_Setting ( wx.Dialog ):
 
 
 
+
+
+	def change_add( self, event ):
+		event.Skip()
 
 	def change_input( self, event ):
 		event.Skip()

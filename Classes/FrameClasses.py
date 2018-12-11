@@ -1,32 +1,43 @@
 import json
 import os
 import sys
+import threading
 import time
 
 import wx
 
 from Classes import noname, WorkClasses, Threads
+from Functions import regedit_ctrl
 
 
 class MainFrame(noname.MyFrame1):
 
-    def __init__(self, parent):
+    def __init__(self, parent, start_path):
         noname.MyFrame1.__init__(self, parent)
-
+        self.start_path = start_path
+        # self.start_path = os.path.split(os.path.realpath(__file__))[0]
+        print(sys.argv)
         try:
-            icon = wx.Icon("files\\icon.ico")
+
+            self.open_give = sys.argv[1]
+            self.is_open_give = True
+
+        except:
+            self.open_give = ''
+            self.is_open_give = False
+        # print(self.start_path)
+        try:
+            icon = wx.Icon(os.path.join(self.start_path, "files\\icon.ico"))
         except FileNotFoundError:
             pass
         else:
             self.SetIcon(icon)
 
-        self.start_path = os.getcwd()
-
-        with open("files\\setting.json", 'r')as file:
+        with open(os.path.join(self.start_path, "files\\setting.json"), 'r')as file:
             setting_dic = json.load(file)
         self.setting_self = setting_dic
 
-        with open("files\\default.json", 'r')as file:
+        with open(os.path.join(self.start_path, "files\\default.json"), 'r')as file:
             self.default = json.load(file)
 
         self.painting = WorkClasses.PaintingWork(self, setting=self.setting_self, default=self.default,
@@ -49,6 +60,15 @@ class MainFrame(noname.MyFrame1):
         self.m_listBox_mesh.SetDropTarget(self.drop_load_mesh)
 
         self.error_list = []
+
+        if self.is_open_give:
+            def give():
+                self.painting.open_give(self.open_give)
+
+            thread = threading.Thread(target=give())
+            thread.start()
+
+            # self.painting.open_give(self.open_give)
 
     def append_error(self, error_info):
         self.m_listBox_errors.Append(error_info)
@@ -293,6 +313,8 @@ class Setting(noname.MyDialog_Setting):
         self.finish_exit = setting_dic["full"]["finish_exit"]
         self.clear_list = setting_dic["full"]['clear_list']
         self.save_all = setting_dic["full"]['save_all']
+        self.m_checkBox_reg.GetValue()
+        self.add_into = setting_dic["full"]['add_into']
 
         self.setting = setting_dic
         self.default = default
@@ -368,6 +390,7 @@ class Setting(noname.MyDialog_Setting):
         self.m_checkBox_open_temp.SetValue(self.auto_open_choice_pic)
         self.m_checkBox4_finish_exit.SetValue(self.finish_exit)
         self.m_checkBox_clear.SetValue(self.clear_list)
+        self.m_checkBox_reg.SetValue(self.add_into)
 
         self.m_checkBox_save_all.SetValue(not self.save_all)
 
@@ -400,6 +423,8 @@ class Setting(noname.MyDialog_Setting):
         self.setting["full"]['clear_list'] = self.m_checkBox_clear.GetValue()
 
         self.setting["full"]['save_all'] = self.m_checkBox_save_all.GetValue()
+
+        self.setting["full"]['add_into'] = self.m_checkBox_reg.GetValue()
 
         self.lock = self.default['lock'] = self.m_toggleBtn_lock.GetValue()
 
@@ -663,6 +688,18 @@ class Setting(noname.MyDialog_Setting):
 
     def out_start(self, event):
         self.crypt.start()
+
+    def change_add(self, event):
+        select = self.m_checkBox_reg.GetValue()
+        self.change(event)
+        if select:
+            wx.MessageBox("注意：\n该功能需要管理员权限")
+
+            regedit_ctrl.append_dir_key()
+        else:
+            wx.MessageBox("注意：\n该功能需要管理员权限")
+
+            regedit_ctrl.append_dir_key()
 
     def GetValue(self):
         return self.setting
@@ -955,9 +992,9 @@ class QuickWork(noname.MyDialogQuick):
             self.Destroy()
 
 
-def main_part():
+def main_part(e):
     app = wx.App(False)
-    frame = MainFrame(None)
+    frame = MainFrame(None, e)
     frame.Show()
 
     app.MainLoop()

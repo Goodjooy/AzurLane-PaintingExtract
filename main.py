@@ -1,4 +1,7 @@
+import os
+import sys
+
 import Classes.FrameClasses
 
 if __name__ == '__main__':
-    Classes.FrameClasses.main_part()
+    Classes.FrameClasses.main_part(os.path.split(os.path.realpath(sys.argv[0]))[0])
