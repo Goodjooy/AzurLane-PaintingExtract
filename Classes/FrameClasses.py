@@ -15,8 +15,7 @@ class MainFrame(noname.MyFrame1):
     def __init__(self, parent, start_path):
         noname.MyFrame1.__init__(self, parent)
         self.start_path = start_path
-        # self.start_path = os.path.split(os.path.realpath(__file__))[0]
-        print(sys.argv)
+
         try:
 
             self.open_give = sys.argv[1]
@@ -25,7 +24,6 @@ class MainFrame(noname.MyFrame1):
         except:
             self.open_give = ''
             self.is_open_give = False
-        # print(self.start_path)
         try:
             icon = wx.Icon(os.path.join(self.start_path, "files\\icon.ico"))
         except FileNotFoundError:
@@ -67,8 +65,6 @@ class MainFrame(noname.MyFrame1):
 
             thread = threading.Thread(target=give())
             thread.start()
-
-            # self.painting.open_give(self.open_give)
 
     def append_error(self, error_info):
         self.m_listBox_errors.Append(error_info)
@@ -313,8 +309,9 @@ class Setting(noname.MyDialog_Setting):
         self.finish_exit = setting_dic["full"]["finish_exit"]
         self.clear_list = setting_dic["full"]['clear_list']
         self.save_all = setting_dic["full"]['save_all']
-        self.m_checkBox_reg.GetValue()
-        self.add_into = setting_dic["full"]['add_into']
+
+        self.dir_menu = setting_dic["full"]['dir_menu']
+        self.dir_bg = setting_dic['full']['dir_bg']
 
         self.setting = setting_dic
         self.default = default
@@ -390,7 +387,6 @@ class Setting(noname.MyDialog_Setting):
         self.m_checkBox_open_temp.SetValue(self.auto_open_choice_pic)
         self.m_checkBox4_finish_exit.SetValue(self.finish_exit)
         self.m_checkBox_clear.SetValue(self.clear_list)
-        self.m_checkBox_reg.SetValue(self.add_into)
 
         self.m_checkBox_save_all.SetValue(not self.save_all)
 
@@ -423,8 +419,6 @@ class Setting(noname.MyDialog_Setting):
         self.setting["full"]['clear_list'] = self.m_checkBox_clear.GetValue()
 
         self.setting["full"]['save_all'] = self.m_checkBox_save_all.GetValue()
-
-        self.setting["full"]['add_into'] = self.m_checkBox_reg.GetValue()
 
         self.lock = self.default['lock'] = self.m_toggleBtn_lock.GetValue()
 
@@ -689,17 +683,12 @@ class Setting(noname.MyDialog_Setting):
     def out_start(self, event):
         self.crypt.start()
 
-    def change_add(self, event):
-        select = self.m_checkBox_reg.GetValue()
-        self.change(event)
-        if select:
-            wx.MessageBox("注意：\n该功能需要管理员权限")
+    def menu_setting(self, event):
+        dialog = MenuChoice(self, self.path)
 
-            regedit_ctrl.append_dir_key()
-        else:
-            wx.MessageBox("注意：\n该功能需要管理员权限")
+        dialog.Show()
 
-            regedit_ctrl.append_dir_key()
+        self.dir_menu, self.dir_bg = dialog.gets()
 
     def GetValue(self):
         return self.setting
@@ -990,6 +979,31 @@ class QuickWork(noname.MyDialogQuick):
         if self.az.is_able() and self.start:
             self.frame.m_gauge_quick.SetValue(100)
             self.Destroy()
+
+
+class MenuChoice(noname.MyDialog_menu):
+    def __init__(self, parent, start_path):
+        super(MenuChoice, self).__init__(parent)
+
+        self.path = start_path
+        self.info = ''
+
+    def ok_change(self, event):
+        path = os.path.join(self.path, 'files\\menu_ctrl.ini')
+
+        self.info = info = [self.m_checkBox_dir.GetValue(), self.m_checkBox_bg.GetValue()]
+
+        with open(path, 'w')as file:
+            json.dump(info, file)
+
+        self.m_sdbSizer5OK.Enable(False)
+        self.m_sdbSizer5Cancel.Enable(False)
+        os.system(os.path.join(self.path, 'files\\menu_ctrl.exe'))
+        self.m_sdbSizer5OK.Enable(True)
+        self.m_sdbSizer5Cancel.Enable(True)
+
+    def gets(self):
+        return self.info
 
 
 def main_part(e):

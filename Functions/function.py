@@ -5,64 +5,17 @@ import numpy as np
 import os
 import functools
 
+from Functions import tools
+
 functools.partial(os.makedirs, exist_ok=True)
 
 
-def get_longest(array_enter):
-    return max([len(value) for value in array_enter])
-
-
-def find(string, array_enter):
-    # one->index two->value
-    if not array_enter:
-        return array_enter
-    able_next = [[], []]
-    indexes = range(get_longest(array_enter))
-    text_val = string[0]
-    able_index = []
-    array_copy = [[index, array_enter[index]] for index in range(len(array_enter))]
-    pass_list = []
-
-    for index in indexes:
-        for value in range(len(array_enter)):
-            try:
-                val1 = (array_copy[value][1][index]).lower()
-            except IndexError:
-                continue
-
-            if val1 == text_val and value not in pass_list:
-                able_next[0].append(value)
-                able_index.append(value)
-                pass_list.append(value)
-                able_next[1].append(array_enter[value][index + 1:])
-
-    string = string[1:]
-    if len(able_next) >= 1 and len(string) > 0:
-        value = find(string, able_next[1])
-        able_index = []
-        for index in value:
-            able_index.append(able_next[0][index])
-        return able_index
-    else:
-        return able_index
+def find(s, l):
+    return tools.find(s, l)
 
 
 def all_file(dir_name):
-    had = []
-    list_keep = os.listdir(dir_name)
-    out_list = []
-    dir_list = []
-    for file in list_keep:
-        if not isfile(dir_name + "\\" + file) and not (file in had):
-            dir_list.append(dir_name + "\\" + file)
-        else:
-            out_list.append(dir_name + "\\" + file)
-    for file in dir_list:
-        re_1 = all_file(dir_name + "\\" + file)
-        had.extend(re_1)
-        out_list.extend(re_1)
-
-    return out_list
+    return tools.all_file(dir_name)
 
 
 def all_file_path(dir_name):

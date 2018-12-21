@@ -322,6 +322,9 @@ class PaintingWork(BaseWorkClass):
 
             self.info_check()
 
+            with open('x.txt', 'w',encoding='utf-8')as sq:
+                json.dump(self._searched_tex, sq,ensure_ascii=False)
+
         except RuntimeError as info:
             return False, info
 
@@ -329,7 +332,6 @@ class PaintingWork(BaseWorkClass):
             return True, ''
 
     def open_give(self, dir_address):
-
 
         files = function.all_file_path(dir_address)[1].values()
         # print(files)

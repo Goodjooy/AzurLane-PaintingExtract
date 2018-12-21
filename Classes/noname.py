@@ -981,8 +981,11 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_checkBox_clear = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"导入前清空列表", wx.DefaultPosition, wx.DefaultSize, 0 )
 		sbSizer8.Add( self.m_checkBox_clear, 0, wx.ALL, 5 )
 
-		self.m_checkBox_reg = wx.CheckBox( sbSizer8.GetStaticBox(), wx.ID_ANY, u"添加到右键菜单", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbSizer8.Add( self.m_checkBox_reg, 0, wx.ALL, 5 )
+		self.m_staticline14 = wx.StaticLine( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		sbSizer8.Add( self.m_staticline14, 0, wx.EXPAND |wx.ALL, 5 )
+
+		self.m_button_menu = wx.Button( sbSizer8.GetStaticBox(), wx.ID_ANY, u"设置右键菜单", wx.DefaultPosition, wx.DefaultSize, 0 )
+		sbSizer8.Add( self.m_button_menu, 0, wx.ALL, 5 )
 
 
 		self.m_scrolledWindow41.SetSizer( sbSizer8 )
@@ -1366,7 +1369,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_checkBox_open_temp.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox4_finish_exit.Bind( wx.EVT_CHECKBOX, self.change )
 		self.m_checkBox_clear.Bind( wx.EVT_CHECKBOX, self.change )
-		self.m_checkBox_reg.Bind( wx.EVT_CHECKBOX, self.change_add )
+		self.m_button_menu.Bind( wx.EVT_BUTTON, self.menu_setting )
 		self.m_radioBox_im.Bind( wx.EVT_RADIOBOX, self.change_input )
 		self.m_radioBox_az_div.Bind( wx.EVT_RADIOBOX, self.change_div )
 		self.m_bpButton7.Bind( wx.EVT_BUTTON, self.type_ch )
@@ -1428,7 +1431,7 @@ class MyDialog_Setting ( wx.Dialog ):
 
 
 
-	def change_add( self, event ):
+	def menu_setting( self, event ):
 		event.Skip()
 
 	def change_input( self, event ):
@@ -1527,6 +1530,61 @@ class MyDialog_Setting ( wx.Dialog ):
 	def m_splitter2OnIdle( self, event ):
 		self.m_splitter2.SetSashPosition( 0 )
 		self.m_splitter2.Unbind( wx.EVT_IDLE )
+
+
+###########################################################################
+## Class MyDialog_menu
+###########################################################################
+
+class MyDialog_menu ( wx.Dialog ):
+
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"设置添加的类型", pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+
+		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+
+		bSizer47 = wx.BoxSizer( wx.VERTICAL )
+
+		self.m_checkBox_dir = wx.CheckBox( self, wx.ID_ANY, u"文件夹右键", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer47.Add( self.m_checkBox_dir, 0, wx.ALL, 5 )
+
+		self.m_checkBox_bg = wx.CheckBox( self, wx.ID_ANY, u"文件夹内右键", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer47.Add( self.m_checkBox_bg, 0, wx.ALL, 5 )
+
+		m_sdbSizer5 = wx.StdDialogButtonSizer()
+		self.m_sdbSizer5OK = wx.Button( self, wx.ID_OK )
+		m_sdbSizer5.AddButton( self.m_sdbSizer5OK )
+		self.m_sdbSizer5Cancel = wx.Button( self, wx.ID_CANCEL )
+		m_sdbSizer5.AddButton( self.m_sdbSizer5Cancel )
+		m_sdbSizer5.Realize();
+
+		bSizer47.Add( m_sdbSizer5, 1, wx.EXPAND, 5 )
+
+
+		self.SetSizer( bSizer47 )
+		self.Layout()
+		bSizer47.Fit( self )
+
+		self.Centre( wx.BOTH )
+
+		# Connect Events
+		self.m_checkBox_dir.Bind( wx.EVT_CHECKBOX, self.use_dir )
+		self.m_checkBox_bg.Bind( wx.EVT_CHECKBOX, self.use_bg )
+		self.m_sdbSizer5OK.Bind( wx.EVT_BUTTON, self.ok_change )
+
+	def __del__( self ):
+		pass
+
+
+	# Virtual event handlers, overide them in your derived class
+	def use_dir( self, event ):
+		event.Skip()
+
+	def use_bg( self, event ):
+		event.Skip()
+
+	def ok_change( self, event ):
+		event.Skip()
 
 
 ###########################################################################
@@ -1837,37 +1895,5 @@ class MyDialog_limit ( wx.Dialog ):
 
 	def save_exit( self, event ):
 		event.Skip()
-
-
-###########################################################################
-## Class MyDialog6
-###########################################################################
-
-class MyDialog6 ( wx.Dialog ):
-
-	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
-
-		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
-
-		bSizer31 = wx.BoxSizer( wx.VERTICAL )
-
-		self.m_staticText24 = wx.StaticText( self, wx.ID_ANY, u"嘤嘤嘤", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText24.Wrap( -1 )
-
-		bSizer31.Add( self.m_staticText24, 0, wx.ALL, 5 )
-
-		self.m_button5 = wx.Button( self, wx.ID_ANY, u"关闭", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer31.Add( self.m_button5, 0, wx.ALL, 5 )
-
-
-		self.SetSizer( bSizer31 )
-		self.Layout()
-		bSizer31.Fit( self )
-
-		self.Centre( wx.BOTH )
-
-	def __del__( self ):
-		pass
 
 

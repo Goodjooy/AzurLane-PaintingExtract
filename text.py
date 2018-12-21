@@ -41,21 +41,24 @@ def girl_front_line_restore(pic_path, pic_alpha, save_path):
     out.save("%s\\%s.png" % (save_path, pic_path))
 
 
-path = input("导入文件夹位置")
-save = input("导出文件夹位置")
-a = os.listdir(path)
-b = {}
-c = {}
-for i in a:
-    if i.split("_")[-1].lower() == "Alpha.png".lower():
-        b[i[:-10]] = i
-    elif i.split("_")[-1].lower() == "N.png".lower():
-        continue
-    else:
-        c[i[:-4]] = i
-i = 0
-for keyes in b.keys():
-    i += 1
-    print(i)
+def et4rdf():
+    path = input("导入文件夹位置")
+    save = input("导出文件夹位置")
+    a = os.listdir(path)
+    b = {}
+    c = {}
+    for i in a:
+        if i.split("_")[-1].lower() == "Alpha.png".lower():
+            b[i[:-10]] = i
+        elif i.split("_")[-1].lower() == "N.png".lower():
+            continue
+        else:
+            c[i[:-4]] = i
+    i = 0
+    for keyes in b.keys():
+        i += 1
+        print(i)
 
-    girl_front_line_restore(c[keyes], b[keyes], save)
+        girl_front_line_restore(c[keyes], b[keyes], save)
+
+
