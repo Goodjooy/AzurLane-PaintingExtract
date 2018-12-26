@@ -12,7 +12,7 @@ import win32clipboard
 import win32con
 import wx
 
-from Classes import Threads, FrameClasses, noname
+from Classes import Threads, FrameClasses, noname, InfoClasses
 from Functions import function, tools
 
 
@@ -28,19 +28,28 @@ class PaintingWork(BaseWorkClass):
 
         super(PaintingWork, self).__init__(form)
 
+        self.tex_type = 1
+        self.mesh_type = 2
+
         self.start_path = start_path
         self.form = self.frame
 
         self.__dialog = None
 
-        # Azur lane values
-        self.tex_name = []
-        self.mesh_name = []
-        self.tex_name_china = []
-        self.mesh_name_china = []
+        self.info = InfoClasses.PerInfoList()
 
-        self.tex_list_path_dir = {}
-        self.mesh_list_path_dir = {}
+        self.unable = InfoClasses.PerInfoList()
+
+        self.skip = InfoClasses.PerInfoList()
+
+        self.able = InfoClasses.PerInfoList()
+
+        # Azur lane values
+
+        self.search_mesh_val = InfoClasses.PerInfoList()
+        self.search_tex_val = InfoClasses.PerInfoList()
+        self.search_skip_val = InfoClasses.PerInfoList()
+        self.search_unable_val = InfoClasses.PerInfoList()
 
         self.choice = None
         try:
@@ -49,25 +58,8 @@ class PaintingWork(BaseWorkClass):
         except FileNotFoundError:
             self.names = {}
 
-        self.pass_finish = True
-
-        self.able_restore = 0
-
-        self.able_restore_list = []
-
-        self.unable_restore_list_showed = []
-        self.unable_restore_list = []
-
-        self.passed_show = []
-        self.passed_list = []
-
         self.save_path = ''
         self.save_path_list = []
-
-        self._searched_tex = []
-        self._searched_mesh = []
-        self._search_skip = []
-        self._search_unable = []
 
         self.form.m_choice_pass.Enable(False)
         self.form.m_choice_unable.Enable(False)
@@ -77,19 +69,12 @@ class PaintingWork(BaseWorkClass):
         self.skip_search = False
         self.unable_search = False
 
-        self.search_mesh_show = []
-        self.search_tex_show = []
-        self.search_skip_show = []
-        self.search_unable_show = []
-
         self.search_mesh_index = []
         self.search_tex_index = []
         self.search_pass_index = []
         self.search_unable_index = []
 
         self.error_list = []
-
-        self.restore_list = []
 
         self.setting = setting["azur_lane"]
 
@@ -134,13 +119,13 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_load_tex.SetLabel("开始")
             self.form.m_gauge_tex_load.SetValue(0)
             paths = self.__dialog.GetPaths()
-            returned = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                       self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, True, '',
-                                       self.names)
+            returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, True, '',
+                                        self.names, self.tex_type)
             if returned[0]:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(self.tex_name_china)
+                self.form.m_listBox_tex.Set(
+                    self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(returned[1])
             address = paths
         else:
@@ -162,14 +147,15 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_mesh_load.SetLabel("开始")
             self.form.m_gauge_mesh_load.SetValue(0)
             paths = self.__dialog.GetPaths()
-            returned = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                       self.mesh_list_path_dir, self.full['clear_list'],
-                                       self.pattern_mesh, True, "-mesh", self.names)
+
+            returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_mesh, True, "-mesh",
+                                        self.names, self.mesh_type)
 
             if returned[0]:
                 self.form.m_gauge_mesh_load.SetValue(function.re_int(100))
 
-                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+                self.form.m_listBox_mesh.Set(
+                    self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(returned[1])
 
             address = paths
@@ -197,13 +183,14 @@ class PaintingWork(BaseWorkClass):
             self.form.m_gauge_mesh_load.SetValue(0)
 
             paths = function.all_file_path(paths)[1]
-            returned, info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                             self.mesh_list_path_dir, self.full['clear_list'],
-                                             self.pattern_mesh, False, "-mesh", self.names)
+
+            returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'],
+                                              self.pattern_mesh, False, "-mesh", self.names, self.mesh_type)
             if returned:
                 self.form.m_gauge_mesh_load.SetValue(100)
                 self.form.m_staticText_mesh_load.SetLabel(info)
-                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+                self.form.m_listBox_mesh.Set(
+                    self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(info)
             address = self.__dialog.GetPath()
         else:
@@ -229,14 +216,14 @@ class PaintingWork(BaseWorkClass):
             paths = self.__dialog.GetPath()
 
             paths = function.all_file_path(paths)[1]
-            returned, info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                             self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex, False,
-                                             '',
-                                             self.names)
+
+            returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, False, '',
+                                              self.names, self.tex_type)
             if returned:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(self.tex_name_china)
+                self.form.m_listBox_tex.Set(
+                    self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(info)
 
             address = self.__dialog.GetPath()
@@ -260,23 +247,23 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
-            returned_tex, tex_info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                                     self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex,
-                                                     False, '',
-                                                     self.names)
+            returned_tex, tex_info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex,
+                                                      False, '',
+                                                      self.names, self.tex_type)
 
-            returned_mesh, mesh_info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                                       self.mesh_list_path_dir, self.full['clear_list'],
-                                                       self.pattern_mesh, False, "-mesh", self.names)
+            returned_mesh, mesh_info = tools.file_deal2(paths, self.info, self.full['clear_list'],
+                                                        self.pattern_mesh, False, "-mesh", self.names, self.mesh_type)
             if returned_tex:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(self.tex_name_china)
+                self.form.m_listBox_tex.Set(
+                    self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(tex_info)
             if returned_mesh:
                 self.form.m_gauge_mesh_load.SetValue(100)
 
-                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+                self.form.m_listBox_mesh.Set(
+                    self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(mesh_info)
 
             address = self.__dialog.GetPath()
@@ -299,31 +286,30 @@ class PaintingWork(BaseWorkClass):
 
             file_names = (filter(lambda x: os.path.isfile(x), file_names))
 
+            if self.full['clear_list']:
+                self.info.clear()
+
             paths = list(filter(lambda x: re.match(r'^UISprite\s#\d+\.png$', os.path.basename(x)) is None, file_names))
 
-            returned_tex, tex_info = tools.file_deal(paths, self.tex_name, self._searched_tex, self.tex_name_china,
-                                                     self.tex_list_path_dir, self.full['clear_list'], self.pattern_tex,
-                                                     True, '',
-                                                     self.names)
+            returned_tex, tex_info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex,
+                                                      True, '', self.names, self.tex_type)
 
-            returned_mesh, mesh_info = tools.file_deal(paths, self.mesh_name, self._searched_mesh, self.mesh_name_china,
-                                                       self.mesh_list_path_dir, self.full['clear_list'],
-                                                       self.pattern_mesh, True, "-mesh", self.names)
+            returned_mesh, mesh_info = tools.file_deal2(paths, self.info, self.full['clear_list'],
+                                                        self.pattern_mesh, True, "-mesh", self.names, self.mesh_type)
             if returned_tex:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(self.tex_name_china)
+                self.form.m_listBox_tex.Set(
+                    self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(tex_info)
             if returned_mesh:
                 self.form.m_gauge_mesh_load.SetValue(100)
 
-                self.form.m_listBox_mesh.Set(self.mesh_name_china)
+                self.form.m_listBox_mesh.Set(self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(mesh_info)
 
             self.info_check()
 
-            with open('x.txt', 'w',encoding='utf-8')as sq:
-                json.dump(self._searched_tex, sq,ensure_ascii=False)
 
         except RuntimeError as info:
             return False, info
@@ -341,24 +327,22 @@ class PaintingWork(BaseWorkClass):
     def mesh_choice(self):
 
         if self.mesh_search:
-            self.choice = self.mesh_name[self.search_mesh_index[self.form.m_listBox_mesh.GetSelection()]]
+            self.choice = self.info[self.search_tex_index[self.form.m_listBox_mesh.GetSelection()]]
         else:
-            self.choice = self.mesh_name[self.form.m_listBox_mesh.GetSelection()]
-        if self.choice in self.tex_name:
+            self.choice = self.info[self.form.m_listBox_mesh.GetSelection()]
+        if self.choice.is_able_work:
             self.form.m_menuItem_choice.Enable(True)
-            show = Threads.QuickRestore(self.choice, self.tex_list_path_dir, self.mesh_list_path_dir, self.form,
-                                        self.start_path, full=self.full)
+            show = Threads.QuickRestore(self.choice, self.form, self.start_path, self.full)
             show.start()
 
     def tex_choice(self):
         if self.tex_search:
-            self.choice = self.tex_name[self.search_tex_index[self.form.m_listBox_tex.GetSelection()]]
+            self.choice = self.info[self.search_tex_index[self.form.m_listBox_tex.GetSelection()]]
         else:
-            self.choice = self.tex_name[self.form.m_listBox_tex.GetSelection()]
-        if self.choice in self.mesh_name:
+            self.choice = self.info[self.form.m_listBox_tex.GetSelection()]
+        if self.choice.is_able_work:
             self.form.m_menuItem_choice.Enable(True)
-            show = Threads.QuickRestore(self.choice, self.tex_list_path_dir, self.mesh_list_path_dir, self.form,
-                                        self.start_path, self.full)
+            show = Threads.QuickRestore(self.choice, self.form, self.start_path, self.full)
             show.start()
 
     def open_file(self):
@@ -366,31 +350,20 @@ class PaintingWork(BaseWorkClass):
             index = self.search_unable_index[self.form.m_listBox_unable.GetSelection()]
         else:
             index = self.form.m_listBox_unable.GetSelection()
-        name = self.unable_restore_list[index]
-        show = Threads.QuickRestore(name, self.tex_list_path_dir, None, self.form,
-                                    self.start_path, full=self.full, back=1)
+        name = self.unable[index]
+        show = Threads.QuickRestore(name, self.form, self.start_path, full=self.full)
         show.start()
         # os.system("start %s" % path)
 
     def open_pass(self):
-        name = ''
         if self.skip_search:
             index = self.search_pass_index[self.form.m_listBox_info.GetSelection()]
         else:
             index = self.form.m_listBox_info.GetSelection()
-        for guide in self.names.keys():
-            if guide == self.passed_list[index]:
-                name = f"{self.names[guide]}.png"
-        try:
-            path = self.save_path_list[1][name]
-        except KeyError:
-            name = name[:-4] + ".PNG"
-            path = self.save_path_list[1][name]
 
-        path = path.split("\\")[-1]
+        path = self.skip[index]
 
-        show = Threads.QuickRestore(path, self.save_path_list[1], None, self.form,
-                                    self.start_path, full=self.full, back=0)
+        show = Threads.QuickRestore(path, self.form, self.start_path, full=self.full, back=0)
         show.start()
 
         # export
@@ -419,35 +392,16 @@ class PaintingWork(BaseWorkClass):
         self.save_path = path
         self.form.m_gauge_all.SetValue(0)
 
-        self.able_restore_list = list(set(self.able_restore_list))
-
         if self.full["skip_had"]:
             self.save_path_list = function.all_file_path(self.save_path)
 
-            num = 1
-            able_restore = self.able_restore_list
-            for able in self.able_restore_list:
-                try:
-                    text = f"{self.names[able]}.png"
-                    text2 = f"{self.names[able]}.PNG"
-                except KeyError:
-                    text = f"{able}.png"
-                    text2 = "{able}.PNG"
-                if text in self.save_path_list[1].keys() or \
-                        text2 in self.save_path_list[1].keys():
-                    self.passed_show.append('%s——%s,第%d个' % (self.names[able], able, num))
-                    self.passed_list.append(able)
-                    self._search_skip.append(f"{able}{self.names[able]}")
-                    num += 1
-                    able_restore.remove(able)
-            self.able_restore_list = able_restore
-            self.form.m_notebook_info.SetSelection(0)
+            self.skip = self.info.build_skip(self.save_path_list[1])
 
         self.form.m_listBox_skip.Clear()
-        self.form.m_listBox_skip.Set(self.passed_show)
+        self.form.m_listBox_skip.Set(self.skip.for_show)
 
-        self.restore.update_list(self.able_restore_list, self.unable_restore_list)
         self.restore.add_save_path(self.save_path)
+        self.restore.update_value(self.able, self.unable)
         if self.restore.is_alive():
             self.restore.stop_(True)
             while self.restore.is_alive():
@@ -479,132 +433,97 @@ class PaintingWork(BaseWorkClass):
     # search
     def search_mesh(self):
         value = self.form.m_searchCtrl_mesh.GetValue()
+        self.search_mesh_val.clear()
         if value != '':
-            indexes = function.find(value, self._searched_mesh)
+            indexes = function.find(value, self.info.for_search)
 
             self.mesh_search = True
 
-            self.search_mesh_show.clear()
-            self.search_mesh_index.clear()
-
-            for index in indexes:
-                self.search_mesh_show.append(self.mesh_name_china[index])
-                self.search_mesh_index.append(index)
+            self.search_mesh_val.extend(self.info.build_search(indexes))
+            self.search_mesh_index = indexes
 
             self.form.m_listBox_mesh.Clear()
-            self.form.m_listBox_mesh.Set(self.search_mesh_show)
+            self.form.m_listBox_mesh.Set(self.search_mesh_val.for_show)
         else:
             self.mesh_search = False
             self.form.m_listBox_mesh.Clear()
-            self.form.m_listBox_mesh.Set(self.mesh_name_china)
+            self.form.m_listBox_mesh.Set(self.info.for_show)
 
     def search_tex(self):
         value = self.form.m_searchCtrl_tex.GetValue()
+        self.search_tex_val.clear()
         if value != '':
-            indexes = function.find(value, self._searched_tex)
+            indexes = function.find(value, self.info.for_search)
             self.tex_search = True
 
-            self.search_tex_show.clear()
-            self.search_tex_index.clear()
-
-            for index in indexes:
-                self.search_tex_show.append(self.tex_name_china[index])
-                self.search_tex_index.append(index)
+            self.search_tex_val.extend(self.info.build_search(indexes))
+            self.search_tex_index = indexes
 
             self.form.m_listBox_tex.Clear()
-            self.form.m_listBox_tex.Set(self.search_tex_show)
+            self.form.m_listBox_tex.Set(self.search_tex_val.for_show)
         else:
             self.tex_search = False
             self.form.m_listBox_tex.Clear()
-            self.form.m_listBox_tex.Set(self.tex_name_china)
+            self.form.m_listBox_tex.Set(self.info.for_show)
 
     def search_pass(self):
         value = self.form.m_searchCtrl_pass.GetValue()
+        self.search_skip_val.clear()
         if value != '':
-            indexes = function.find(value, self._search_skip)
+            indexes = function.find(value, self.skip.for_search)
 
             self.skip_search = True
 
-            self.search_pass_index.clear()
-            self.search_skip_show.clear()
+            self.search_pass_index = indexes
 
-            for index in indexes:
-                self.search_skip_show.append(self.passed_show[index])
-                self.search_pass_index.append(index)
+            self.search_skip_val.extend(self.skip.build_search(indexes))
 
             self.form.m_listBox_skip.Clear()
-            self.form.m_listBox_skip.Set(self.search_skip_show)
+            self.form.m_listBox_skip.Set(self.search_skip_val.for_show)
         else:
             self.skip_search = False
             self.form.m_listBox_skip.Clear()
-            self.form.m_listBox_skip.Set(self.passed_show)
+            self.form.m_listBox_skip.Set(self.skip.for_show)
 
     def search_unable(self):
         value = self.form.m_searchCtrl_unable.GetValue()
+        self.search_unable_val.clear()
         if value != "":
-            indexes = function.find(value, self._search_unable)
+            indexes = function.find(value, self.unable.for_search)
 
             self.unable_search = True
 
-            self.search_unable_index.clear()
-            self.search_unable_show.clear()
-
-            for index in indexes:
-                self.search_unable_show.append(self.unable_restore_list_showed[index])
-                self.search_unable_index.append(index)
+            self.search_unable_index = indexes
+            self.search_unable_val.extend(self.info.build_search(indexes))
 
             self.form.m_listBox_unable.Clear()
-            self.form.m_listBox_unable.Set(self.search_unable_show)
+            self.form.m_listBox_unable.Set(self.search_unable_val.for_show)
         else:
             self.unable_search = False
             self.form.m_listBox_unable.Clear()
-            self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
+            self.form.m_listBox_unable.Set(self.unable.for_show)
 
         # else
 
     # else
     def able_export(self):
-        for name in self.mesh_name:
-            if name in self.tex_name:
-                self.able_restore += 1
-                self.able_restore_list.append(name)
-        if self.able_restore >= 1:
-            num = 0
-            self.unable_restore_list = []
-            self.unable_restore_list_showed.clear()
-            for name in self.tex_name:
-                if name not in self.mesh_name and name.split(' ')[0] != "UISprite":
-                    num += 1
-                    try:
-                        self.unable_restore_list_showed.append("%d） %s" % (num, self.names[name]))
-                    except KeyError:
-                        self.unable_restore_list_showed.append("%d） %s" % (num, name))
-                    self.unable_restore_list.append(name)
-                    try:
-                        self._search_unable.append(f"{name}{self.names[name]}")
-                    except KeyError:
-                        self._search_unable.append(f"{name}{name}")
+        self.able.extend(self.info.build_able())
 
-            self.form.m_listBox_unable.Clear()
-            self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
+        self.unable.extend(self.info.build_unable())
 
-        if len(self.tex_name) >= 1:
+        self.form.m_listBox_unable.Clear()
+        self.form.m_listBox_unable.Set(self.unable.for_show)
+
+        if len(self.info) >= 1:
             self.able_add = True
         else:
             self.able_add = False
 
-        return self.able_restore >= 1
+        return bool(self.able)
 
     def restart(self):
 
-        self.passed_show = []
-        self.passed_list = []
-        self._search_skip.clear()
-
-        for name in self.mesh_name:
-            if name in self.tex_name:
-                self.able_restore += 1
-                self.able_restore_list.append(name)
+        self.skip.clear()
 
         self.restore = Threads.RestoreThread(1, 'restore', self)
         self.form.m_staticText_all.SetLabel("总进度：%s %%" % '0')
@@ -623,71 +542,19 @@ class PaintingWork(BaseWorkClass):
         self.pattern_mesh = re.compile(self.setting['mesh_limit'])
 
     def update_names(self):
-        self.mesh_name_china.clear()
-        self._searched_mesh.clear()
-
-        self.tex_name_china.clear()
-        self._searched_tex.clear()
-
-        self.unable_restore_list_showed.clear()
-        self._search_unable.clear()
-
-        self.passed_show.clear()
-        self._search_skip.clear()
-
-        num = 1
         with open("%s\\files\\names.json" % self.start_path, 'r')as file:
             names = json.load(file)
         self.names = names
-        for name in self.mesh_name:
 
-            try:
-                self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
-                self._searched_mesh.append(f"{self.names[name]}{name}")
-            except KeyError:
-                self.mesh_name_china.append(f"{num}）{name}——{name}")
-                self._searched_mesh.append(f"{name}")
-            num += 1
-        num = 1
+        self.info.up_date_name_cn(self.names)
+        self.unable.up_date_name_cn(self.names)
+        self.able.up_date_name_cn(self.names)
+        self.skip.up_date_name_cn(self.names)
 
-        for path in self.tex_name:
-
-            try:
-                self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
-                self._searched_tex.append(f"{self.names[path]}{path}")
-            except KeyError:
-                self.tex_name_china.append(f"{num}）{path}——{path}")
-                self._searched_tex.append(f"{path}")
-            num += 1
-
-        num = 1
-        for able in self.passed_list:
-
-            try:
-                self.passed_show.append('%s——%s,第%d个' % (self.names[able], able, num))
-            except KeyError:
-                self.passed_show.append('%s——%s,第%d个' % (able, able, num))
-            try:
-                self._search_skip.append(f"{able}{self.names[able]}")
-            except KeyError:
-                self._search_skip.append(f"{able}{able}")
-            num += 1
-        num = 1
-        for name in self.unable_restore_list:
-
-            try:
-                self.unable_restore_list_showed.append("%d） %s" % (num, self.names[name]))
-            except KeyError:
-                self.unable_restore_list_showed.append("%d） %s" % (num, name))
-            try:
-                self._search_unable.append(f"{name}{self.names[name]}")
-            except KeyError:
-                self._search_unable.append(f"{name}{name}")
-
-        self.form.m_listBox_mesh.Set(self.mesh_name_china)
-        self.form.m_listBox_tex.Set(self.tex_name_china)
-        self.form.m_listBox_skip.Set(self.passed_show)
-        self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
+        self.form.m_listBox_mesh.Set(self.info.for_show)
+        self.form.m_listBox_tex.Set(self.info.for_show)
+        self.form.m_listBox_skip.Set(self.skip.for_show)
+        self.form.m_listBox_unable.Set(self.unable.for_show)
 
     def info_check(self):
         if self.able_export():
@@ -695,7 +562,7 @@ class PaintingWork(BaseWorkClass):
         else:
             self.form.m_menuItem_all.Enable(False)
 
-        if len(self.unable_restore_list) >= 1:
+        if len(self.unable) >= 1:
             self.form.m_menuItem_copy_only.Enable(True)
         else:
             self.form.m_menuItem_copy_only.Enable(False)

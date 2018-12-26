@@ -1,4 +1,1 @@
-__all__={'FrameClasses.py', 'noname', 'WorkClasses.py', 'Threads'}
-
-
-
+__all__ = {'FrameClasses', 'noname', 'WorkClasses', 'Threads', 'InfoClasses'}

@@ -625,18 +625,18 @@ class Setting(noname.MyDialog_Setting):
         if self.m_radioBox_type_use.GetSelection() == 0:
             choice = self.m_radioBox_im.GetSelection()
             tex = [
-                r'^[^_\s]+\.[Pp][Nn][Gg]$',
+                r'^.+\.[Pp][Nn][Gg]$',
                 r'^[^_\s]+_\d\.[Pp][Nn][Gg]$',
                 r'^[^_\s]+_[Hh]\.[Pp][Nn][Gg]$',
                 r'^[^_\s]+_[Gg]\.[Pp][Nn][Gg]$',
-                r'^[^_\s]+(_younv)*\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+(_younv){0,1}\.[Pp][Nn][Gg]$',
             ]
             mesh = [
-                r'^[^_\s]+-mesh\.[oO][Bb][Jj]$',
+                r'^.+-mesh\.[oO][Bb][Jj]$',
                 r'^[^_\s]+_\d-mesh\.[oO][Bb][Jj]$',
                 r'^[^_\s]+_[Hh]-mesh\.[oO][Bb][Jj]$',
                 r'^[^_\s]+_[Gg]-mesh\.[oO][Bb][Jj]$',
-                r'^[^_\s]+(_younv)*-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+(_younv){0,1}-mesh\.[oO][Bb][Jj]$',
             ]
             if choice == 0:
                 self.m_textCtrl_tex_limit.SetLabel(tex[0])

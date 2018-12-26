@@ -177,3 +177,121 @@ def find(string, array_enter):
         return able_index
     else:
         return able_index
+
+ for name in self.mesh_name:
+            if name in self.tex_name:
+                self.able_restore += 1
+                self.able_restore_list.append(name)
+        if self.able_restore >= 1:
+            num = 0
+            self.unable_restore_list = []
+            self.unable_restore_list_showed.clear()
+            for name in self.tex_name:
+                if name not in self.mesh_name and name.split(' ')[0] != "UISprite":
+                    num += 1
+                    try:
+                        self.unable_restore_list_showed.append("%d） %s" % (num, self.names[name]))
+                    except KeyError:
+                        self.unable_restore_list_showed.append("%d） %s" % (num, name))
+                    self.unable_restore_list.append(name)
+                    try:
+                        self._search_unable.append(f"{name}{self.names[name]}")
+                    except KeyError:
+                        self._search_unable.append(f"{name}{name}")
+
+            self.form.m_listBox_unable.Clear()
+            self.form.m_listBox_unable.Set(self.unable_restore_list_showed)
+
+        if len(self.tex_name) >= 1:
+            self.able_add = True
+        else:
+            self.able_add = False
+
+        return self.able_restore >= 1
+
+
+
+        for name in self.mesh_name:
+
+            try:
+                self.mesh_name_china.append(f"{num}）{self.names[name]}——{name}")
+                self._searched_mesh.append(f"{self.names[name]}{name}")
+            except KeyError:
+                self.mesh_name_china.append(f"{num}）{name}——{name}")
+                self._searched_mesh.append(f"{name}")
+            num += 1
+        num = 1
+
+        for path in self.tex_name:
+
+            try:
+                self.tex_name_china.append(f"{num}）{self.names[path]}——{path}")
+                self._searched_tex.append(f"{self.names[path]}{path}")
+            except KeyError:
+                self.tex_name_china.append(f"{num}）{path}——{path}")
+                self._searched_tex.append(f"{path}")
+            num += 1
+
+        num = 1
+        for able in self.passed_list:
+
+            try:
+                self.passed_show.append('%s——%s,第%d个' % (self.names[able], able, num))
+            except KeyError:
+                self.passed_show.append('%s——%s,第%d个' % (able, able, num))
+            try:
+                self._search_skip.append(f"{able}{self.names[able]}")
+            except KeyError:
+                self._search_skip.append(f"{able}{able}")
+            num += 1
+        num = 1
+        for name in self.unable_restore_list:
+
+            try:
+                self.unable_restore_list_showed.append("%d） %s" % (num, self.names[name]))
+            except KeyError:
+                self.unable_restore_list_showed.append("%d） %s" % (num, name))
+            try:
+                self._search_unable.append(f"{name}{self.names[name]}")
+            except KeyError:
+                self._search_unable.append(f"{name}{name}")
+
+
+ had = []
+    list_keep = os.listdir(dir_name)
+    diction = {}
+    dir_list = []
+    file_name_list = []
+    file_list = []
+    for file in list_keep:
+        if not isfile(dir_name + "\\" + file) and not (file in had):
+            dir_list.append(file)
+        elif file.split(' ')[0] == "UISprite":
+            pass
+        elif file.split(' ')[-1][0] == "#":
+            temp = file.split('\\')[-1].lower().replace('.png', '').split(" ")
+            if temp[0].split("_")[-1].lower() == "alpha":
+                temp = '_Alpha ' + temp[-1]
+                file_list.append(file)
+                file_name_list.append(file.replace(temp, "_again_Alpha"))
+            else:
+                temp = " " + temp[-1]
+                file_list.append(file)
+                file = file.replace(temp, "_again")
+                file_name_list.append(file)
+
+        else:
+            file_list.append(file)
+            file_name_list.append(file)
+    for file in dir_list:
+        re = all_file_path(dir_name + "\\" + file)
+        had.extend(re[0])
+        file_name_list.extend(re[0])
+        for keys in re[1]:
+            diction[keys] = re[1][keys]
+    for index in range(len(file_name_list)):
+        if not file_name_list[index] in had:
+            diction[file_name_list[index]] = dir_name + "\\" + file_list[index]
+            file_list[index] = dir_name + "\\" + file_list[index]
+
+    return file_list, diction
