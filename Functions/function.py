@@ -5,6 +5,7 @@ import numpy as np
 import os
 import functools
 
+from Classes import InfoClasses
 from Functions import tools
 
 functools.partial(os.makedirs, exist_ok=True)
@@ -19,44 +20,7 @@ def all_file(dir_name):
 
 
 def all_file_path(dir_name):
-    had = []
-    list_keep = os.listdir(dir_name)
-    diction = {}
-    dir_list = []
-    file_name_list = []
-    file_list = []
-    for file in list_keep:
-        if not isfile(dir_name + "\\" + file) and not (file in had):
-            dir_list.append(file)
-        elif file.split(' ')[0] == "UISprite":
-            pass
-        elif file.split(' ')[-1][0] == "#":
-            temp = file.split('\\')[-1].lower().replace('.png', '').split(" ")
-            if temp[0].split("_")[-1].lower() == "alpha":
-                temp = '_Alpha ' + temp[-1]
-                file_list.append(file)
-                file_name_list.append(file.replace(temp, "_again_Alpha"))
-            else:
-                temp = " " + temp[-1]
-                file_list.append(file)
-                file = file.replace(temp, "_again")
-                file_name_list.append(file)
-
-        else:
-            file_list.append(file)
-            file_name_list.append(file)
-    for file in dir_list:
-        re = all_file_path(dir_name + "\\" + file)
-        had.extend(re[0])
-        file_name_list.extend(re[0])
-        for keys in re[1]:
-            diction[keys] = re[1][keys]
-    for index in range(len(file_name_list)):
-        if not file_name_list[index] in had:
-            diction[file_name_list[index]] = dir_name + "\\" + file_list[index]
-            file_list[index] = dir_name + "\\" + file_list[index]
-
-    return file_list, diction
+    return tools.all_file_path(dir_name)
 
 
 def isfile(file):
@@ -167,24 +131,18 @@ def az_paint_restore(mesh_path: str, tex_path: str):
     return pic_out
 
 
-def restore_tool(ship_name, names, mesh_in_path, pic_in_path, save_area):
+def restore_tool(now_info: InfoClasses.PerInfo):
     """拼图用的函数
     """
     try:
-        pic = az_paint_restore(mesh_in_path[ship_name], pic_in_path[ship_name])
+        pic = az_paint_restore(now_info.mesh_path, now_info.tex_path)
 
-        try:
-            names[ship_name]
-        except KeyError:
-            name = ship_name
-        else:
-            name = names[ship_name]
-        pic.save("%s\\%s.png" % (save_area, name))
+        pic.save(now_info.save_path)
     except RuntimeError as info:
         return False, info
 
     else:
-        return True, "成功还原：%s" % name
+        return True, "成功还原：%s" % now_info.name_cn
 
 
 def restore_tool_one(mesh_path, pic_path, save_as, ):

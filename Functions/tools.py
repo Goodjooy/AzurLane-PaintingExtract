@@ -3,6 +3,8 @@ import re
 import os.path as op
 import functools
 
+from Classes import InfoClasses
+
 
 def info_write_builder(is_file, dict_path, replace_str, set_list, file_path, list_enter, names, list_search):
     def info_write(path):
@@ -87,6 +89,71 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
         return True, '导入成功！ 成功导入%d个！' % num
 
 
+def info_write2_builder(is_file, dict_path, replace_str, info_list,
+                        names, type_set):
+    def info_write(path):
+        num = path[1] + 1
+        if not is_file:
+            name = path[0]
+            path = dict_path[name]
+            name = op.splitext(name)[0].replace(replace_str, '')
+        else:
+            name = op.splitext(op.basename(path[0]))[0].replace(replace_str, '')
+
+        key = info_list.append_name(name, names)
+
+        if type_set == 1:
+            info_list.set_tex(key, path[0])
+        if type_set == 2:
+            info_list.set_mesh(key, path[0])
+
+    return info_write
+
+
+def file_deal2(paths, info_list: InfoClasses.PerInfoList, clear_list: bool = False, pattern=r'^[.\n]*$', is_file=True,
+               replace_str: str = '', names: dict = None, type_set=1):
+    try:
+        if names is None:
+            names = {}
+
+        pattern_re = re.compile(pattern)
+        if not is_file:
+            dict_path = paths.copy()
+            paths = paths.keys()
+            num = len(paths)
+        else:
+            dict_path = {}
+            num = len(info_list)
+
+        if clear_list:
+            # info_list.clear()
+            num = 0
+
+        if not len(paths) == 0:
+
+            path = filter(lambda x: pattern_re.match(os.path.basename(x)) is not None, paths)
+            path = list(path)
+
+            info_write2 = info_write2_builder(is_file, dict_path, replace_str, info_list,
+                                              names, type_set)
+
+            path_len = len(path)
+            paths = zip(path, range(path_len))
+
+            paths = list(paths)
+
+            num += len(list(map(info_write2, list(paths))))
+
+            if path_len == 0:
+                return False, '导入完成，无新增项！'
+        else:
+            return False, '导入失败，无导入项！'
+    except (TypeError, KeyError, RuntimeError)as info:
+        return False, '导入失败，发生错误！%s' % info
+    else:
+        return True, '导入成功！ 成功导入%d个！' % num
+
+
 def pattern_builder(x, y):
     """
     change pattern only char to avoid some problems
@@ -150,10 +217,26 @@ def all_file(dir_name, skip_type=r'^UISprite.+$'):
     return return_list
 
 
+def build_dict_builder(dict_in):
+    def build_dict(val):
+        val_v = os.path.basename(val[0]).lower()
+        if val_v in dict_in:
+            val_v += f"#{val[1]}"
+
+        dict_in[val_v] = val[0]
+        return val_v
+
+    return build_dict
+
+
 def all_file_path(dir_name):
     files = all_file(dir_name)
+    dict_out = {}
+    build_dict = build_dict_builder(dict_out)
 
-    return files
+    files = list(map(build_dict, zip(files, range(len(files)))))
+
+    return files, dict_out
 
 
 if __name__ == '__main__' and False:
@@ -216,5 +299,9 @@ if __name__ == '__main__' and False:
     print(a[b[0]])
 
 if __name__ == '__main__':
-    for d in all_file('E:\\jacky\\az2\\Texture2D'):
-        print(d)
+    b = InfoClasses.PerInfoList()
+    a = all_file_path('E:\\jacky\\az2\\Texture2D')
+
+    # print(file_deal2(a, b, pattern=r'^.+$'))
+    print(a[1])
+    print(a[0])
