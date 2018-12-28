@@ -48,38 +48,70 @@ class PerInfo(object):
     def need_skip(self, path_files: dict):
         keys = path_files.keys()
         files = path_files
-        name_cn = self.name_cn
-        name = self.name
+        name_cn = self.name_cn + '.png'
+        name = self.name + '.png'
 
-        if name_cn + '.png' in keys:
+        if name_cn in keys:
             self.is_skip = True
-            self.lay_in = files[name_cn + '.png']
-        if name + '.png' in keys:
+            self.lay_in = files[name_cn]
+            return True
+        elif name in keys:
             self.is_skip = True
-            self.lay_in = files[name + '.png']
-
+            self.lay_in = files[name]
+            return True
         else:
             self.is_skip = False
-
-        return self.is_skip
+            return False
 
     def add_save(self, save_path):
         if self.set_ex_as_cn:
-            self.save_path = os.path.join(save_path, self.name_cn)
+            self.save_path = os.path.join(save_path, self.name_cn + ".png")
         else:
-            self.save_path = os.path.join(save_path, self.name)
+            self.save_path = os.path.join(save_path, self.name + ".png")
 
     def get_show(self, index=0):
         return f'{index}）:{self.name_cn}——{self.name};(@_@)'
 
     def get_search(self):
-        return f'{self.name}{self.name_cn}'
+        if self.has_cn:
+            return f'{self.name}{self.name_cn}'
+        else:
+            return self.name
+
+    def set_name_cn(self, name):
+        if name != self.name_cn and name != '':
+            self.name_cn = name
+            self.has_cn = True
+        else:
+            self.has_cn = False
 
     def update_name(self, names: dict):
         if self.name in names.keys():
             self.name_cn = names[self.name]
         else:
             self.name_cn = self.name
+
+    def rebuild_self(self, value):
+
+        if isinstance(value, PerInfo):
+            self.tex_path = value.tex_path
+            self.mesh_path = value.mesh_path
+            self.save_path = value.save_path
+
+            self.lay_in = value.lay_in
+
+            self.name = value.name
+
+            self.has_cn = value.has_cn
+            self.name_cn = value.name_cn
+            self.is_able_work = value.is_able_work
+
+            self.is_skip = value.is_skip
+
+            self.set_ex_as_cn = value.set_ex_as_cn
+
+        else:
+            raise ValueError
 
 
 class KeyExistError(KeyError):
@@ -115,11 +147,6 @@ class PerInfoList(object):
         del self.for_search[index]
 
     def __getitem__(self, item):
-        """
-
-        :param item:
-        :return: PerInfo
-        """
         if isinstance(item, int):
             return self._info_dict[self._info_key_list[item]]
         else:
@@ -170,7 +197,7 @@ class PerInfoList(object):
             return False
 
     def remove(self, item: collections.Iterable):
-        return PerInfoList(filter(lambda x: x in item, self))
+        return PerInfoList(filter(lambda x: x not in item, self))
 
     def append_name(self, name, names_key):
 
@@ -204,17 +231,41 @@ class PerInfoList(object):
     def set_save(self, key, path):
         self._info_dict[key].add_save(path)
 
+    def set_self(self, key, value):
+        self._info_dict[key].rebuild_self(value)
+        index = self.get_index(key)
+        value = self._info_dict[key]
+        self.for_show[index] = value.get_show(index + 1)
+        self.for_search[index] = value.get_search()
+
     def clear(self):
         self._info_key_list.clear()
         self._info_dict.clear()
         self.for_search.clear()
         self.for_show.clear()
 
+    def get_index(self, value):
+        if isinstance(value, PerInfo):
+            try:
+                return self._info_key_list.index(value.name)
+            except ValueError:
+                return None
+        if isinstance(value, str):
+            try:
+                return self._info_key_list.index(value)
+            except ValueError:
+                return None
+
     def up_date_name_cn(self, name_cn: dict):
         list(map(lambda _x: _x.update_name(name_cn), self))
 
     def is_in_dict(self, item):
         return item not in self._info_dict.keys()
+
+    def build_no_cn(self):
+        val = (filter(lambda _x: not _x.has_cn, self))
+        cla = PerInfoList(val)
+        return cla
 
     def build_unable(self):
         val = (filter(lambda _x: not _x.is_able_work, self))
@@ -232,8 +283,9 @@ class PerInfoList(object):
 
         return cla
 
-    def build_skip(self, filename):
-        val = (filter(lambda _x: _x.need_skip(filename), self))
+    def build_no_skip(self, filename):
+        val = (filter(lambda _x: not _x.need_skip(filename), self))
+
         cla = PerInfoList(val)
 
         return cla
@@ -243,6 +295,13 @@ class PerInfoList(object):
         cla = PerInfoList()
 
         list(map(lambda _x: cla.append_self(_x), val))
+
+        return cla
+
+    def build_skip(self, filename):
+        val = (filter(lambda _x: _x.need_skip(filename), self))
+
+        cla = PerInfoList(val)
 
         return cla
 

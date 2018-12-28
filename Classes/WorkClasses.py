@@ -1,14 +1,11 @@
-import functools
-import threading
-
-import PIL.Image
 import json
 import os
+import re
 import shutil
 import time
-import re
 import win32clipboard
 
+import PIL.Image
 import win32con
 import wx
 
@@ -103,8 +100,9 @@ class PaintingWork(BaseWorkClass):
         return self.choice
 
     def is_able(self):
-        return self.able_restore_list != []
+        return bool(self.able)
 
+    # load
     def load_tex(self):
         self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
@@ -119,6 +117,10 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_load_tex.SetLabel("开始")
             self.form.m_gauge_tex_load.SetValue(0)
             paths = self.__dialog.GetPaths()
+
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, True, '',
                                         self.names, self.tex_type)
             if returned[0]:
@@ -147,6 +149,9 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_mesh_load.SetLabel("开始")
             self.form.m_gauge_mesh_load.SetValue(0)
             paths = self.__dialog.GetPaths()
+
+            if self.full['clear_list']:
+                self.info.clear()
 
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_mesh, True, "-mesh",
                                         self.names, self.mesh_type)
@@ -184,6 +189,9 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'],
                                               self.pattern_mesh, False, "-mesh", self.names, self.mesh_type)
             if returned:
@@ -217,6 +225,9 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, False, '',
                                               self.names, self.tex_type)
             if returned:
@@ -246,6 +257,9 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_mesh_load.SetLabel('开始')
 
             paths = function.all_file_path(paths)[1]
+
+            if self.full['clear_list']:
+                self.info.clear()
 
             returned_tex, tex_info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex,
                                                       False, '',
@@ -357,9 +371,9 @@ class PaintingWork(BaseWorkClass):
 
     def open_pass(self):
         if self.skip_search:
-            index = self.search_pass_index[self.form.m_listBox_info.GetSelection()]
+            index = self.search_pass_index[self.form.m_listBox_skip.GetSelection()]
         else:
-            index = self.form.m_listBox_info.GetSelection()
+            index = self.form.m_listBox_skip.GetSelection()
 
         path = self.skip[index]
 
@@ -382,7 +396,7 @@ class PaintingWork(BaseWorkClass):
         if self.full['auto_open']:
             os.system("start %s" % self.save_path)
 
-    def export_all(self, path):
+    def export_all(self, path, for_work: InfoClasses.PerInfoList = None):
         if self.setting["new_dir"]:
             path += r"\碧蓝航线-导出"
 
@@ -392,16 +406,26 @@ class PaintingWork(BaseWorkClass):
         self.save_path = path
         self.form.m_gauge_all.SetValue(0)
 
+        if isinstance(for_work, InfoClasses.PerInfoList):
+            for_work = for_work
+            for_work = for_work.build_able()
+        else:
+            for_work = self.able
+
         if self.full["skip_had"]:
             self.save_path_list = function.all_file_path(self.save_path)
 
-            self.skip = self.info.build_skip(self.save_path_list[1])
+            self.skip = for_work.build_skip(self.save_path_list[1])
+            able = for_work.remove(self.skip)
+
+        else:
+            able = for_work
 
         self.form.m_listBox_skip.Clear()
         self.form.m_listBox_skip.Set(self.skip.for_show)
 
         self.restore.add_save_path(self.save_path)
-        self.restore.update_value(self.able, self.unable)
+        self.restore.update_value(able, self.unable)
         if self.restore.is_alive():
             self.restore.stop_(True)
             while self.restore.is_alive():
@@ -418,12 +442,12 @@ class PaintingWork(BaseWorkClass):
             path = self.__dialog.GetPath()
             num = 0
             self.form.m_gauge_all.SetValue(0)
-            for name in self.unable_restore_list:
+            for name in self.unable:
                 num += 1
+                name.add_save(path)
+                shutil.copyfile(name.tex_path, name.save_path)
 
-                shutil.copyfile(self.tex_list_path_dir[name], f'{path}\\{self.names[name]}.png')
-
-                self.form.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable_restore_list))))
+                self.form.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable))))
 
             if self.full['auto_open']:
                 os.system(self.save_path)
@@ -442,10 +466,13 @@ class PaintingWork(BaseWorkClass):
             self.search_mesh_val.extend(self.info.build_search(indexes))
             self.search_mesh_index = indexes
 
+            self.frame.m_menuItem_mesh_search.Enable(True)
+
             self.form.m_listBox_mesh.Clear()
             self.form.m_listBox_mesh.Set(self.search_mesh_val.for_show)
         else:
             self.mesh_search = False
+            self.frame.m_menuItem_tex_search.Enable(False)
             self.form.m_listBox_mesh.Clear()
             self.form.m_listBox_mesh.Set(self.info.for_show)
 
@@ -459,10 +486,13 @@ class PaintingWork(BaseWorkClass):
             self.search_tex_val.extend(self.info.build_search(indexes))
             self.search_tex_index = indexes
 
+            self.frame.m_menuItem_tex_search.Enable(True)
+
             self.form.m_listBox_tex.Clear()
             self.form.m_listBox_tex.Set(self.search_tex_val.for_show)
         else:
             self.tex_search = False
+            self.frame.m_menuItem_tex_search.Enable(False)
             self.form.m_listBox_tex.Clear()
             self.form.m_listBox_tex.Set(self.info.for_show)
 
@@ -525,7 +555,8 @@ class PaintingWork(BaseWorkClass):
 
         self.skip.clear()
 
-        self.restore = Threads.RestoreThread(1, 'restore', self)
+        self.restore = Threads.RestoreThread(1, 'restore', self.able, self.unable, self.frame, self.setting, self.full,
+                                             self.names, self.save_path)
         self.form.m_staticText_all.SetLabel("总进度：%s %%" % '0')
         self.form.m_gauge_all.SetValue(0)
 
@@ -783,12 +814,11 @@ class CryptImage(EncryptImage):
 
 
 class Add(object):
-    def __init__(self, parent: noname.MyDialog_Setting, name_list, names, start_path):
-
+    def __init__(self, parent: noname.MyDialog_Setting, info: InfoClasses.PerInfoList, names, start_path):
         self.parent = parent
-        self.name_list = name_list
-        self.need_add = []
-        self.need_add_show = []
+        self.info = info
+        self.need_add = InfoClasses.PerInfoList()
+
         self.finish_num = 0
 
         self.start_path = start_path
@@ -799,33 +829,26 @@ class Add(object):
         return self.names
 
     def show_info(self):
-        for name in self.name_list:
-            if name not in self.names.keys():
-                self.need_add.append(name)
-                self.need_add_show.append("%s: " % name)
+        self.need_add = self.info.build_no_cn()
 
-        self.parent.m_listBox_new.Set(self.need_add_show)
+        self.parent.m_listBox_new.Set(self.need_add.for_show)
 
     def open_add_name(self):
         index = self.parent.m_listBox_new.GetSelection()
         value = self.need_add[index]
-        if value in self.names.keys():
-            value_cn = self.names[value]
-        else:
-            value_cn = ''
 
-        writer = FrameClasses.Writer(self.parent, value, value_cn)
+        writer = FrameClasses.Writer(self.parent, value)
         writer.ShowModal()
         if writer.is_able():
-            name = writer.GetValue()
-            if name != '':
-                self.finish_num += 1
-            elif value in self.names.keys() and name == '':
-                self.finish_num -= 1
-            self.names[value] = name
-            self.need_add_show[index] = "%s：%s" % (self.need_add[index], name)
+            value = writer.GetValue()
+            self.finish_num += 1
+            self.need_add.set_self(value.name, value)
+            index = self.need_add.get_index(value)
 
-            self.parent.m_listBox_new.SetString(index, self.need_add_show[index])
+            self.parent.m_listBox_new.SetString(index, self.need_add[index].get_show(index + 1))
+        else:
+            self.finish_num -= 1
+
         scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
         self.parent.m_gauge5.SetValue(scale)
 
@@ -879,65 +902,58 @@ class ChangeName:
         with open("%s\\files\\names.json" % self.start_path, 'r')as file:
             self.names = json.load(file)
 
-        self.show_list = []
-        self.key_list = []
-        self.searched_list = []
+        self.info = InfoClasses.PerInfoList()
 
-        self.searched_show = []
+        self.search = InfoClasses.PerInfoList()
+
         self.search_list = []
-
         self.searched = False
 
     def show_all(self):
         num = 0
         for index in self.names.keys():
             num += 1
-            self.show_list.append("%d）\t%s：%s" % (num, index, self.names[index]))
-            self.key_list.append(index)
-            self.searched_list.append("%s%s" % (index, self.names[index]))
+            self.info.append_name(index, self.names)
         self.frame.m_listBox_change.Clear()
-        self.frame.m_listBox_change.Set(self.show_list)
+        self.frame.m_listBox_change.Set(self.info.for_show)
 
     def change_name(self):
         index = self.frame.m_listBox_change.GetSelection()
         if not self.searched:
-            name = self.key_list[index]
+            name = self.info[index]
         else:
-            name = self.search_list[index]
-        name_cn = self.names[name]
+            name = self.search[index]
 
-        writer = FrameClasses.Writer(self.frame, name, name_cn)
+        writer = FrameClasses.Writer(self.frame, name)
         writer.ShowModal()
         if writer.is_able():
-            name_cn = writer.GetValue()
+            value = writer.GetValue()
 
-            self.names[name] = name_cn
+            self.info.set_self(value.name, value)
+            self.search.set_self(value.name, value)
 
-            self.show_list[index] = "%d）\t%s：%s" % (index + 1, self.key_list[index], self.names[self.key_list[index]])
-            self.key_list[index] = name
+            self.names[value.name] = value.name_cn
+            if not self.searched:
+                index = self.info.get_index(value)
+            else:
+                index = self.search.get_index(value)
 
-            self.frame.m_listBox_change.SetString(index, self.show_list[index])
+            self.frame.m_listBox_change.SetString(index, value.get_show(index))
 
     def searching(self):
         value = self.frame.m_searchCtrl2.GetValue()
         if value != '':
             self.searched = True
-            indexes = function.find(value, self.searched_list)
+            indexes = function.find(value, self.info.for_search)
 
-            self.searched_show.clear()
-
-            self.search_list.clear()
-
-            for index in indexes:
-                self.searched_show.append(self.show_list[index])
-                self.search_list.append(self.key_list[index])
-
+            self.search = self.info.build_search(indexes)
+            self.frame.m_listBox_change.Clear()
+            self.frame.m_listBox_change.Set(self.search.for_show)
         else:
-            self.searched_show = self.show_list.copy()
-            self.search_list = self.key_list.copy()
             self.searched = False
-        self.frame.m_listBox_change.Clear()
-        self.frame.m_listBox_change.Set(self.searched_show)
+
+            self.frame.m_listBox_change.Clear()
+            self.frame.m_listBox_change.Set(self.info.for_show)
 
     def get_change(self):
         return self.names

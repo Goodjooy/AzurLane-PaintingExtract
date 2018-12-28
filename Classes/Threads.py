@@ -109,7 +109,16 @@ class RestoreThread(threading.Thread):
                 self.format.m_gauge_all.SetValue(val)
                 self.index += 1
 
+        self.format.m_listBox_log.Append("直接还原部分完成")
+        choice = self.format.m_listBox_log.Append("")
+
+        self.format.m_listBox_log.SetSelection(choice)
+
         if self.setting["export_type"] == 1:
+            self.format.m_listBox_log.Append("仅拷贝开始")
+            choice = self.format.m_listBox_log.Append("")
+
+            self.format.m_listBox_log.SetSelection(choice)
             num = 0
             os.makedirs(f'{self.save_path}\\拷贝', exist_ok=True)
 
@@ -168,7 +177,8 @@ class QuickRestore(threading.Thread):
             size = tuple(self.father.m_bitmap_show.GetSize())
             if self.info.is_able_work:
                 pic = function.restore_tool_no_save(self.info.mesh_path, self.info.tex_path, size)
-
+            elif self.info.lay_in != '':
+                pic = function.pic_transform(self.info.lay_in, size)
             else:
                 pic = function.pic_transform(self.info.tex_path, size)
 

@@ -6,8 +6,7 @@ import time
 
 import wx
 
-from Classes import noname, WorkClasses, Threads
-from Functions import regedit_ctrl
+from Classes import noname, WorkClasses, Threads, InfoClasses
 
 
 class MainFrame(noname.MyFrame1):
@@ -135,7 +134,7 @@ class MainFrame(noname.MyFrame1):
             temp = dialog.GetPath()
 
             if self.painting.is_able():
-                self.painting.export_all(temp)
+                self.painting.export_all(temp, self.painting.able)
 
         else:
             pass
@@ -143,6 +142,47 @@ class MainFrame(noname.MyFrame1):
     def copy_file(self, event):
 
         self.painting.copy_file()
+
+    def tex_search_ex(self, event):
+        title = '保存'
+        if self.painting.is_able():
+            title += "-碧蓝航线-Texture搜索"
+        if self.default['lock']:
+            address = self.default['export']
+        else:
+            address = os.getcwd()
+        dialog = wx.DirDialog(self, title, address, style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+
+        if dialog.ShowModal() == wx.ID_OK:
+            temp = dialog.GetPath()
+
+            if self.painting.is_able():
+                self.painting.export_all(temp, self.painting.search_tex_val)
+
+        else:
+            pass
+
+    def mesh_search_ex(self, event):
+        title = '保存'
+        if self.painting.is_able():
+            title += "-碧蓝航线"
+        if self.default['lock']:
+            address = self.default['export']
+        else:
+            address = os.getcwd()
+        dialog = wx.DirDialog(self, title, address, style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+
+        if dialog.ShowModal() == wx.ID_OK:
+            temp = dialog.GetPath()
+
+            if self.painting.is_able():
+                self.painting.export_all(temp, self.painting.search_mesh_val)
+
+        else:
+            pass
+
+    def unable_search_ex(self, event):
+        pass
 
     # tools
     def quick_work(self, event):
@@ -216,8 +256,9 @@ class MainFrame(noname.MyFrame1):
         dialog.Show()
 
     def setting(self, event):
-        dialog = Setting(self, self.setting_self, self.default, self.start_path, self.painting.tex_name,
-                         self.painting.names, self.start_path, self.painting.is_able_add(), self.setting_page)
+        dialog = Setting(self, self.setting_self, self.default, self.start_path, self.painting.info,
+                         self.painting.names, self.painting.is_able_add(),
+                         self.setting_page)
         temp = dialog.ShowModal()
         if temp == 0:
             if dialog.IsChange:
@@ -255,34 +296,33 @@ class MainFrame(noname.MyFrame1):
 
 class Writer(noname.MyDialog_enter_name):
 
-    def __init__(self, parent, name, name_cn):
+    def __init__(self, parent, info: InfoClasses.PerInfo):
         noname.MyDialog_enter_name.__init__(self, parent)
 
-        self.name = name
-        self.name_cn = name_cn
-        self.old = name_cn
+        self.info = info
 
     def show_name(self, event):
-        self.m_staticText8.SetLabel("%s: " % self.name)
-        self.m_textCtrl2.SetValue(self.name_cn)
+        self.m_staticText8.SetLabel("%s: " % self.info.name)
+        self.m_textCtrl2.SetValue(self.info.name_cn)
 
     def save_name(self, event):
-        self.name_cn = self.m_textCtrl2.GetValue()
+        self.info.set_name_cn(self.m_textCtrl2.GetValue())
         self.Destroy()
 
     def is_able(self):
-        return not self.old == self.name_cn
+        return self.info.has_cn
 
     def GetValue(self):
-        return self.name_cn
+        return self.info
 
 
 class Setting(noname.MyDialog_Setting):
     lock: bool
 
-    def __init__(self, parent, setting_dic, default, def_path, name_list, names, start_path, able_add, setting_select):
+    def __init__(self, parent, setting_dic, default, def_path, info, names, able_add, setting_select):
         super().__init__(parent=parent)
 
+        self.info = info
         self.path = def_path
         temp = wx.Image('%s\\files\\bg_story_litang.png' % self.path, wx.BITMAP_TYPE_PNG)
         temp = temp.ConvertToBitmap()
@@ -291,16 +331,11 @@ class Setting(noname.MyDialog_Setting):
         self.azur_lane_div_type = setting_dic["azur_lane"]["div_type"]
         self.azur_lane_export_type = setting_dic["azur_lane"]["export_type"]
         self.azur_lane_new_dir = setting_dic["azur_lane"]["new_dir"]
-
         self.azur_lane_use_default = setting_dic["azur_lane"]['div_use']
-
         self.azur_lane_with_cn = setting_dic["azur_lane"]["export_with_cn"]
-
         self.azur_lane_tex_limit = setting_dic["azur_lane"]['tex_limit']
         self.azur_lane_mesh_limit = setting_dic["azur_lane"]['mesh_limit']
-
         self.azur_lane_divide_list = setting_dic["azur_lane"]['divide_list']
-
         self.azur_lane_input_use = setting_dic["azur_lane"]["input_use"]
 
         self.open_dir_after_finish = setting_dic["full"]["open_dir"]
@@ -309,7 +344,6 @@ class Setting(noname.MyDialog_Setting):
         self.finish_exit = setting_dic["full"]["finish_exit"]
         self.clear_list = setting_dic["full"]['clear_list']
         self.save_all = setting_dic["full"]['save_all']
-
         self.dir_menu = setting_dic["full"]['dir_menu']
         self.dir_bg = setting_dic['full']['dir_bg']
 
@@ -341,8 +375,8 @@ class Setting(noname.MyDialog_Setting):
         self.tex_work = False
         self.mesh_work = False
 
-        self.add_new_name = WorkClasses.Add(self, name_list, names, start_path)
-        self.change_name_cn = WorkClasses.ChangeName(self, start_path)
+        self.add_new_name = WorkClasses.Add(self, self.info, names, self.path)
+        self.change_name_cn = WorkClasses.ChangeName(self, self.path)
         self.compare = WorkClasses.Compare(self)
         self.encrypt = WorkClasses.EncryptImage(self)
         self.crypt = WorkClasses.CryptImage(self)
@@ -359,8 +393,6 @@ class Setting(noname.MyDialog_Setting):
         self.m_choice_type.Enable(False)
 
         self.names = {}
-
-        self.start = start_path
 
     def ok_click(self, event):
         self.change_work()
@@ -438,7 +470,7 @@ class Setting(noname.MyDialog_Setting):
             else:
                 continue
 
-        with open(self.start + "\\files\\names.json", 'w')as file:
+        with open(self.path + "\\files\\names.json", 'w')as file:
             json.dump(self.names, file)
 
         self.setting_select = self.m_notebook3.GetSelection()
@@ -1003,7 +1035,7 @@ class MenuChoice(noname.MyDialog_menu):
         self.m_sdbSizer5Cancel.Enable(True)
 
     def gets(self):
-        return self.info
+        return self.info[0],self.info[1]
 
 
 def main_part(e):

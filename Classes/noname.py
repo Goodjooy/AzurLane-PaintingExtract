@@ -89,8 +89,20 @@ class MyFrame1 ( wx.Frame ):
 		self.m_menu_export.Append( self.m_menuItem_copy_only )
 		self.m_menuItem_copy_only.Enable( False )
 
-		self.m_menuItem_flex = wx.MenuItem( self.m_menu_export, wx.ID_ANY, u"导出筛选项", wx.EmptyString, wx.ITEM_NORMAL )
-		self.m_menu_export.Append( self.m_menuItem_flex )
+		self.m_menu_search = wx.Menu()
+		self.m_menuItem_tex_search = wx.MenuItem( self.m_menu_search, wx.ID_ANY, u"Texture结果", wx.EmptyString, wx.ITEM_NORMAL )
+		self.m_menu_search.Append( self.m_menuItem_tex_search )
+		self.m_menuItem_tex_search.Enable( False )
+
+		self.m_menuItem_mesh_search = wx.MenuItem( self.m_menu_search, wx.ID_ANY, u"Mesh结果", wx.EmptyString, wx.ITEM_NORMAL )
+		self.m_menu_search.Append( self.m_menuItem_mesh_search )
+		self.m_menuItem_mesh_search.Enable( False )
+
+		self.m_menuItem_unable_search = wx.MenuItem( self.m_menu_search, wx.ID_ANY, u"不符合条件结果", wx.EmptyString, wx.ITEM_NORMAL )
+		self.m_menu_search.Append( self.m_menuItem_unable_search )
+		self.m_menuItem_unable_search.Enable( False )
+
+		self.m_menu_export.AppendSubMenu( self.m_menu_search, u"导出搜索结果" )
 
 		self.m_menubar2.Append( self.m_menu_export, u"导出" )
 
@@ -332,7 +344,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_panel3.SetSizer( bSizer6 )
 		self.m_panel3.Layout()
 		bSizer6.Fit( self.m_panel3 )
-		self.m_notebook_info.AddPage( self.m_panel3, u"跳过文件信息", False )
+		self.m_notebook_info.AddPage( self.m_panel3, u"跳过文件信息", True )
 		self.m_panel4 = wx.Panel( self.m_notebook_info, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer72 = wx.BoxSizer( wx.VERTICAL )
 
@@ -359,7 +371,7 @@ class MyFrame1 ( wx.Frame ):
 		self.m_panel4.SetSizer( bSizer72 )
 		self.m_panel4.Layout()
 		bSizer72.Fit( self.m_panel4 )
-		self.m_notebook_info.AddPage( self.m_panel4, u"不符合", True )
+		self.m_notebook_info.AddPage( self.m_panel4, u"不符合", False )
 		self.m_panel_else = wx.Panel( self.m_notebook_info, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer26 = wx.BoxSizer( wx.VERTICAL )
 
@@ -440,6 +452,9 @@ class MyFrame1 ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self.export_all, id = self.m_menuItem_all.GetId() )
 		self.Bind( wx.EVT_MENU, self.export_choice, id = self.m_menuItem_choice.GetId() )
 		self.Bind( wx.EVT_MENU, self.copy_file, id = self.m_menuItem_copy_only.GetId() )
+		self.Bind( wx.EVT_MENU, self.tex_search_ex, id = self.m_menuItem_tex_search.GetId() )
+		self.Bind( wx.EVT_MENU, self.mesh_search_ex, id = self.m_menuItem_mesh_search.GetId() )
+		self.Bind( wx.EVT_MENU, self.unable_search_ex, id = self.m_menuItem_unable_search.GetId() )
 		self.m_bpButton_quick.Bind( wx.EVT_BUTTON, self.quick_work )
 		self.m_searchCtrl_tex.Bind( wx.EVT_SEARCHCTRL_SEARCH_BTN, self.search_tex )
 		self.m_searchCtrl_tex.Bind( wx.EVT_TEXT, self.search_tex )
@@ -511,6 +526,15 @@ class MyFrame1 ( wx.Frame ):
 		event.Skip()
 
 	def copy_file( self, event ):
+		event.Skip()
+
+	def tex_search_ex( self, event ):
+		event.Skip()
+
+	def mesh_search_ex( self, event ):
+		event.Skip()
+
+	def unable_search_ex( self, event ):
 		event.Skip()
 
 	def quick_work( self, event ):
