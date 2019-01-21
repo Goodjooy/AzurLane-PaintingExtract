@@ -1,14 +1,11 @@
+import functools
 import re
 
 import PIL.Image
 import numpy as np
-import os
-import functools
 
 from Classes import InfoClasses
 from Functions import tools
-
-functools.partial(os.makedirs, exist_ok=True)
 
 
 def find(s, l):
@@ -131,7 +128,7 @@ def az_paint_restore(mesh_path: str, tex_path: str):
     return pic_out
 
 
-def restore_tool(now_info: InfoClasses.PerInfo):
+def restore_tool(now_info: InfoClasses.PerWork):
     """拼图用的函数
     """
     try:

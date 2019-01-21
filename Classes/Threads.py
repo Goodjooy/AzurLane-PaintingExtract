@@ -12,7 +12,7 @@ from Functions import function
 
 class RestoreThread(threading.Thread):
 
-    def __init__(self, id_thread, name, able: InfoClasses.PerInfoList, unable: InfoClasses.PerInfoList, parent, setting,
+    def __init__(self, id_thread, name, able: InfoClasses.PerWorkList, unable: InfoClasses.PerWorkList, parent, setting,
                  full, names, save_path):
         threading.Thread.__init__(self)
         self.full = full
@@ -34,109 +34,133 @@ class RestoreThread(threading.Thread):
         self.save_path = save_path
 
     def run(self):
-        for self.index in range(len(self.able)):
-            if self.index < len(self.able) and not self.stop:
-                now_info: InfoClasses.PerInfo = self.able[self.index]
-                self.format.m_staticText_now.SetLabel("当前：%s" % now_info.name_cn)
-                choice = self.format.m_listBox_log.Append("开始第%d个！为：%s 类型-直接还原" % (self.index + 1, now_info.name_cn))
-                self.format.m_listBox_log.SetSelection(choice)
+        num = 0
+        while not self.stop:
+            if num == 0:
+                for self.index in range(len(self.able)):
 
-                now_info.set_ex_as_cn = self.setting["export_with_cn"]
+                    if self.stop:
+                        break
+                    if self.index < len(self.able) and not self.stop:
+                        now_info: InfoClasses.PerWork = self.able[self.index]
+                        self.format.m_staticText_now.SetLabel("当前：%s" % now_info.name_cn)
+                        choice = self.format.m_listBox_log.Append(
+                            "开始第%d个！为：%s 类型-直接还原" % (self.index + 1, now_info.name_cn))
+                        self.format.m_listBox_log.SetSelection(choice)
 
-                if self.setting['div_use'] == 0:
-                    if self.setting["div_type"] == 1:
+                        now_info.set_ex_as_cn = self.setting["export_with_cn"]
 
-                        save_path = f"{self.save_path}\\{now_info.name_cn}"
+                        if self.setting['div_use'] == 0:
+                            if self.setting["div_type"] == 1:
+
+                                save_path = f"{self.save_path}\\{now_info.name_cn}"
+                                os.makedirs(save_path, exist_ok=True)
+
+                            elif self.setting["div_type"] == 2:
+                                pattern_skin = re.compile(r'^[a-zA-Z0-9_]+_\d$')
+                                pattern_power = re.compile(r'^[a-zA-Z0-9_]+_[gG]$')
+                                pattern_marry = re.compile(r'^[a-zA-Z0-9_]+_[hH]$')
+                                pattern_self = re.compile(r'^[a-zA-Z0-9_]+$')
+                                if pattern_skin.match(now_info.name) is not None:
+
+                                    save_path = f"{self.save_path}\\皮肤"
+
+                                elif pattern_marry.match(now_info.name) is not None:
+                                    save_path = f"{self.save_path}\\婚纱"
+
+                                elif pattern_power.match(now_info.name) is not None:
+                                    save_path = f"{self.save_path}\\改造"
+
+                                elif pattern_self.match(now_info.name) is not None:
+                                    save_path = f"{self.save_path}\\原皮"
+                                else:
+                                    save_path = f"{self.save_path}\\其他"
+
+                            else:
+                                save_path = self.save_path
+
+                        elif self.setting['div_use'] == 1:
+                            list_work = self.setting['divide_list']
+                            paths = filter(lambda x: re.match(x['pattern'], now_info.name), list_work[1:])
+                            paths = list(map(lambda x: f"{self.save_path}\\{x['dir']}", paths))
+
+                            if not paths:
+                                save_path = f"{self.save_path}\\其他"
+                            else:
+                                save_path = paths[0]
+
+                        else:
+                            save_path = self.save_path
+
                         os.makedirs(save_path, exist_ok=True)
 
-                    elif self.setting["div_type"] == 2:
-                        pattern_skin = re.compile(r'^[a-zA-Z0-9_]+_\d$')
-                        pattern_power = re.compile(r'^[a-zA-Z0-9_]+_[gG]$')
-                        pattern_marry = re.compile(r'^[a-zA-Z0-9_]+_[hH]$')
-                        pattern_self = re.compile(r'^[a-zA-Z0-9_]+$')
-                        if pattern_skin.match(now_info.name) is not None:
+                        now_info.add_save(save_path)
 
-                            save_path = f"{self.save_path}\\皮肤"
+                        time_1 = time.time()
+                        is_good, info = function.restore_tool(now_info)
+                        time_1 = time.time() - time_1
+                        self.format.m_listBox_log.Append("      tex文件：%s" % now_info.tex_path)
+                        self.format.m_listBox_log.Append("      mesh文件：%s" % now_info.mesh_path)
+                        self.format.m_listBox_log.Append("      保存位置：%s" % now_info.save_path)
+                        if not is_good:
+                            self.format.append_error(info)
 
-                        elif pattern_marry.match(now_info.name) is not None:
-                            save_path = f"{self.save_path}\\婚纱"
+                        self.format.m_listBox_log.Append("%s，用时：%.2fs" % (info, time_1))
 
-                        elif pattern_power.match(now_info.name) is not None:
-                            save_path = f"{self.save_path}\\改造"
+                        choice = self.format.m_listBox_log.Append("")
+                        self.format.m_listBox_log.SetSelection(choice)
 
-                        elif pattern_self.match(now_info.name) is not None:
-                            save_path = f"{self.save_path}\\原皮"
-                        else:
-                            save_path = f"{self.save_path}\\其他"
+                        val_percent = str(round(100 * (self.index / len(self.able)), 2))
+                        val = function.re_int(100 * (self.index / len(self.able)))
+                        self.format.m_staticText_all.SetLabel("总进度：%s %%" % val_percent)
+                        self.format.m_gauge_all.SetValue(val)
+                        self.index += 1
 
-                    else:
-                        save_path = self.save_path
 
-                elif self.setting['div_use'] == 1:
-                    list_work = self.setting['divide_list']
-                    paths = filter(lambda x: re.match(x['pattern'], now_info.name), list_work[1:])
-                    paths = list(map(lambda x: f"{self.save_path}\\{x['dir']}", paths))
 
-                    if not paths:
-                        save_path = f"{self.save_path}\\其他"
-                    else:
-                        save_path = paths[0]
-
-                else:
-                    save_path = self.save_path
-
-                os.makedirs(save_path, exist_ok=True)
-
-                now_info.add_save(save_path)
-
-                time_1 = time.time()
-                is_good, info = function.restore_tool(now_info)
-                time_1 = time.time() - time_1
-                self.format.m_listBox_log.Append("      tex文件：%s" % now_info.tex_path)
-                self.format.m_listBox_log.Append("      mesh文件：%s" % now_info.mesh_path)
-                self.format.m_listBox_log.Append("      保存位置：%s" % now_info.save_path)
-                if not is_good:
-                    self.format.append_error(info)
-
-                self.format.m_listBox_log.Append("%s，用时：%.2fs" % (info, time_1))
-
+                self.format.m_listBox_log.Append("直接还原部分完成")
                 choice = self.format.m_listBox_log.Append("")
+
                 self.format.m_listBox_log.SetSelection(choice)
 
-                val_percent = str(round(100 * (self.index / len(self.able)), 2))
-                val = function.re_int(100 * (self.index / len(self.able)))
-                self.format.m_staticText_all.SetLabel("总进度：%s %%" % val_percent)
-                self.format.m_gauge_all.SetValue(val)
-                self.index += 1
+            if num == 1 and self.setting["export_type"] == 1:
+                if not self.stop:
+                    break
+                self.format.m_listBox_log.Append("仅拷贝开始")
+                choice = self.format.m_listBox_log.Append("")
 
-        if self.setting["export_type"] == 1:
-            num = 0
-            os.makedirs(f'{self.save_path}\\拷贝', exist_ok=True)
+                self.format.m_listBox_log.SetSelection(choice)
+                num = 0
+                os.makedirs(f'{self.save_path}\\拷贝', exist_ok=True)
 
-            for name in self.unable:
-                name: InfoClasses.PerInfo = name
-                name.add_save(f'{self.save_path}\\拷贝')
-                num += 1
-                shutil.copyfile(name.tex_path, name.save_path)
+                for name in self.unable:
+                    name: InfoClasses.PerWork = name
+                    name.add_save(f'{self.save_path}\\拷贝')
+                    num += 1
+                    shutil.copyfile(name.tex_path, name.save_path)
 
-                self.format.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable))))
+                    self.format.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable))))
 
-        else:
-            pass
+            else:
+                pass
+            if num == 2:
+                self.format.m_staticText_all.SetLabel("总进度：%s %%" % '100')
+                self.format.start = False
 
-        self.format.m_staticText_all.SetLabel("总进度：%s %%" % '100')
-        self.format.start = False
+                self.format.m_gauge_all.SetValue(100)
 
-        self.format.m_gauge_all.SetValue(100)
+                if self.full["open_dir"]:
+                    os.system(r'start "%s"' % self.save_path)
 
-        if self.full["open_dir"]:
-            os.system(r"start %s" % self.save_path)
+                if self.full['finish_exit']:
+                    self.format.exit(True)
 
-        if self.full['finish_exit']:
-            self.format.exit(True)
+                if self.format.any_error():
+                    self.format.m_notebook_info.SetSelection(2)
 
-        if self.format.any_error():
-            self.format.m_notebook_info.SetSelection(2)
+            else:
+                break
+            num += 1
 
     def stop_(self, stop: bool):
         self.stop = stop
@@ -151,7 +175,7 @@ class RestoreThread(threading.Thread):
 
 class QuickRestore(threading.Thread):
 
-    def __init__(self, info: InfoClasses.PerInfo, father: noname.MyFrame1 = None, work_path='', full=None,
+    def __init__(self, info: InfoClasses.PerWork, father: noname.MyFrame1 = None, work_path='', full=None,
                  back=2):
         threading.Thread.__init__(self)
 
@@ -168,7 +192,8 @@ class QuickRestore(threading.Thread):
             size = tuple(self.father.m_bitmap_show.GetSize())
             if self.info.is_able_work:
                 pic = function.restore_tool_no_save(self.info.mesh_path, self.info.tex_path, size)
-
+            elif self.info.lay_in != '':
+                pic = function.pic_transform(self.info.lay_in, size)
             else:
                 pic = function.pic_transform(self.info.tex_path, size)
 
@@ -185,7 +210,7 @@ class QuickRestore(threading.Thread):
             # if
             # self.father.m_notebook_info.SetSelection(self.back)
             if self.full["auto_open"] and False:
-                os.system(r'start ' + "%s\\temp.png" % self.path)
+                os.system(r'start ' + "\"%s\\temp.png\"" % self.path)
 
         except RuntimeError as info:
             self.father.append_error(info)

@@ -110,7 +110,7 @@ def info_write2_builder(is_file, dict_path, replace_str, info_list,
     return info_write
 
 
-def file_deal2(paths, info_list: InfoClasses.PerInfoList, clear_list: bool = False, pattern=r'^[.\n]*$', is_file=True,
+def file_deal2(paths, info_list: InfoClasses.PerWorkList, clear_list: bool = False, pattern=r'^[.\n]*$', is_file=True,
                replace_str: str = '', names: dict = None, type_set=1):
     try:
         if names is None:
@@ -239,6 +239,12 @@ def all_file_path(dir_name):
     return files, dict_out
 
 
+def format_str(val_set, val):
+    value = list(map(lambda x: f'文件夹：{x["dir"]},格式：{x["pattern"]}', val))
+
+    val_set.Set(value)
+
+
 if __name__ == '__main__' and False:
     a = ["2222", "3333", "阿贝克隆比abeikelongbi", "阿芙乐尔afuleer", "阿赫野aheye", "爱宕aidang", "爱丁堡aidingbao",
          "埃尔德里奇aierdeliqi",
@@ -299,7 +305,7 @@ if __name__ == '__main__' and False:
     print(a[b[0]])
 
 if __name__ == '__main__':
-    b = InfoClasses.PerInfoList()
+    b = InfoClasses.PerWorkList()
     a = all_file_path('E:\\jacky\\az2\\Texture2D')
 
     # print(file_deal2(a, b, pattern=r'^.+$'))

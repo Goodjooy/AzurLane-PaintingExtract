@@ -1,14 +1,13 @@
 import functools
-import threading
-
-import PIL.Image
 import json
 import os
-import shutil
-import time
 import re
+import shutil
+import threading
+import time
 import win32clipboard
 
+import PIL.Image
 import win32con
 import wx
 
@@ -24,7 +23,11 @@ class BaseWorkClass:
 class PaintingWork(BaseWorkClass):
     """a class only to deal with the tex for azur lane"""
 
-    def __init__(self, form: noname.MyFrame1, setting, default, start_path=os.getcwd()):
+    def __init__(self,
+                 form: noname.MyFrame1 = ...,
+                 setting: dict = ...,
+                 default: dict = ...,
+                 start_path: str = os.getcwd()):
 
         super(PaintingWork, self).__init__(form)
 
@@ -35,23 +38,24 @@ class PaintingWork(BaseWorkClass):
         self.form = self.frame
 
         self.__dialog = None
+        # infomation
+        self.info: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
 
-        self.info = InfoClasses.PerInfoList()
+        self.unable: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
 
-        self.unable = InfoClasses.PerInfoList()
+        self.skip: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
 
-        self.skip = InfoClasses.PerInfoList()
+        self.able: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
 
-        self.able = InfoClasses.PerInfoList()
+        # search
 
-        # Azur lane values
+        self.search_mesh_val: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
+        self.search_tex_val: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
+        self.search_skip_val: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
+        self.search_unable_val: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
+        # choice
+        self.choice: InfoClasses.PerWorkList = InfoClasses.PerWorkList()
 
-        self.search_mesh_val = InfoClasses.PerInfoList()
-        self.search_tex_val = InfoClasses.PerInfoList()
-        self.search_skip_val = InfoClasses.PerInfoList()
-        self.search_unable_val = InfoClasses.PerInfoList()
-
-        self.choice = None
         try:
             with open('%s\\files\\names.json' % self.start_path, 'r')as file:
                 self.names = json.load(file)
@@ -69,11 +73,6 @@ class PaintingWork(BaseWorkClass):
         self.skip_search = False
         self.unable_search = False
 
-        self.search_mesh_index = []
-        self.search_tex_index = []
-        self.search_pass_index = []
-        self.search_unable_index = []
-
         self.error_list = []
 
         self.setting = setting["azur_lane"]
@@ -87,7 +86,7 @@ class PaintingWork(BaseWorkClass):
         self.pattern_tex = re.compile(self.setting['tex_limit'])
         self.pattern_mesh = re.compile(self.setting['mesh_limit'])
 
-        self.restore = None
+        self.restore: Threads.RestoreThread = threading.Thread()
 
         self.able_add = False
 
@@ -103,8 +102,9 @@ class PaintingWork(BaseWorkClass):
         return self.choice
 
     def is_able(self):
-        return self.able_restore_list != []
+        return bool(self.able)
 
+    # load
     def load_tex(self):
         self.form.m_gauge_tex_load.SetValue(0)
         if self.lock:
@@ -119,6 +119,10 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_load_tex.SetLabel("开始")
             self.form.m_gauge_tex_load.SetValue(0)
             paths = self.__dialog.GetPaths()
+
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, True, '',
                                         self.names, self.tex_type)
             if returned[0]:
@@ -147,6 +151,9 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_mesh_load.SetLabel("开始")
             self.form.m_gauge_mesh_load.SetValue(0)
             paths = self.__dialog.GetPaths()
+
+            if self.full['clear_list']:
+                self.info.clear()
 
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_mesh, True, "-mesh",
                                         self.names, self.mesh_type)
@@ -184,6 +191,9 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'],
                                               self.pattern_mesh, False, "-mesh", self.names, self.mesh_type)
             if returned:
@@ -217,6 +227,9 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
+            if self.full['clear_list']:
+                self.info.clear()
+
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, False, '',
                                               self.names, self.tex_type)
             if returned:
@@ -246,6 +259,9 @@ class PaintingWork(BaseWorkClass):
             self.form.m_staticText_mesh_load.SetLabel('开始')
 
             paths = function.all_file_path(paths)[1]
+
+            if self.full['clear_list']:
+                self.info.clear()
 
             returned_tex, tex_info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex,
                                                       False, '',
@@ -310,7 +326,6 @@ class PaintingWork(BaseWorkClass):
 
             self.info_check()
 
-
         except RuntimeError as info:
             return False, info
 
@@ -326,45 +341,69 @@ class PaintingWork(BaseWorkClass):
     # choice
     def mesh_choice(self):
 
+        indexes = self.frame.m_listBox_mesh.GetSelections()
+
+        last = self.choice
         if self.mesh_search:
-            self.choice = self.info[self.search_tex_index[self.form.m_listBox_mesh.GetSelection()]]
+            self.choice = self.search_mesh_val.build_search(indexes)
         else:
-            self.choice = self.info[self.form.m_listBox_mesh.GetSelection()]
-        if self.choice.is_able_work:
-            self.form.m_menuItem_choice.Enable(True)
-            show = Threads.QuickRestore(self.choice, self.form, self.start_path, self.full)
+            self.choice = self.info.build_search(indexes)
+
+        last = last.get_new(self.choice)
+
+        if len(last) > 0:
+            if last.is_all_able():
+                self.form.m_menuItem_choice.Enable(True)
+            show = Threads.QuickRestore(last[-1], self.form, self.start_path, self.full)
             show.start()
 
     def tex_choice(self):
+        indexes = self.frame.m_listBox_tex.GetSelections()
+
+        last = self.choice
         if self.tex_search:
-            self.choice = self.info[self.search_tex_index[self.form.m_listBox_tex.GetSelection()]]
+            self.choice = self.search_tex_val.build_search(indexes)
         else:
-            self.choice = self.info[self.form.m_listBox_tex.GetSelection()]
-        if self.choice.is_able_work:
-            self.form.m_menuItem_choice.Enable(True)
-            show = Threads.QuickRestore(self.choice, self.form, self.start_path, self.full)
+            self.choice = self.info.build_search(indexes)
+
+        last = last.get_new(self.choice)
+
+        if len(last) > 0:
+            if last.is_all_able():
+                self.form.m_menuItem_choice.Enable(True)
+            show = Threads.QuickRestore(last[-1], self.form, self.start_path, self.full)
             show.start()
 
     def open_file(self):
+        indexes = self.frame.m_listBox_unable.GetSelections()
+
+        last = self.choice
         if self.unable_search:
-            index = self.search_unable_index[self.form.m_listBox_unable.GetSelection()]
+            self.choice = self.search_unable_val.build_search(indexes)
         else:
-            index = self.form.m_listBox_unable.GetSelection()
-        name = self.unable[index]
-        show = Threads.QuickRestore(name, self.form, self.start_path, full=self.full)
-        show.start()
+            self.choice = self.unable.build_search(indexes)
+
+        last = last.get_new(self.choice)
+
+        if len(last) > 0:
+            show = Threads.QuickRestore(last[-1], self.form, self.start_path, self.full)
+            show.start()
         # os.system("start %s" % path)
 
     def open_pass(self):
+        indexes = self.frame.m_listBox_skip.GetSelections()
+
+        last = self.choice
         if self.skip_search:
-            index = self.search_pass_index[self.form.m_listBox_info.GetSelection()]
+            self.choice = self.search_skip_val.build_search(indexes)
         else:
-            index = self.form.m_listBox_info.GetSelection()
+            self.choice = self.skip.build_search(indexes)
 
-        path = self.skip[index]
+        last = last.get_new(self.choice)
 
-        show = Threads.QuickRestore(path, self.form, self.start_path, full=self.full, back=0)
-        show.start()
+        if len(last) > 0:
+            show = Threads.QuickRestore(last[-1], self.form, self.start_path, self.full)
+            show.start()
 
         # export
 
@@ -380,9 +419,9 @@ class PaintingWork(BaseWorkClass):
 
         self.form.m_gauge_all.SetValue(100)
         if self.full['auto_open']:
-            os.system("start %s" % self.save_path)
+            os.system(r'"start %s"' % self.save_path)
 
-    def export_all(self, path):
+    def export_all(self, path, for_work: InfoClasses.PerWorkList = None, for_unable: InfoClasses.PerWorkList = None):
         if self.setting["new_dir"]:
             path += r"\碧蓝航线-导出"
 
@@ -392,16 +431,32 @@ class PaintingWork(BaseWorkClass):
         self.save_path = path
         self.form.m_gauge_all.SetValue(0)
 
+        if isinstance(for_work, InfoClasses.PerWorkList):
+            for_work = for_work
+            for_work = for_work.build_able()
+        else:
+            for_work = self.able
+        if isinstance(for_work, InfoClasses.PerWorkList):
+            for_work = for_work
+            for_work = for_work.build_able()
+        else:
+            for_work = self.able
+            for_unable = self.able
+
         if self.full["skip_had"]:
             self.save_path_list = function.all_file_path(self.save_path)
 
-            self.skip = self.info.build_skip(self.save_path_list[1])
+            self.skip = for_work.build_skip(self.save_path_list[1])
+            able = for_work.remove(self.skip)
+
+        else:
+            able = for_work
 
         self.form.m_listBox_skip.Clear()
         self.form.m_listBox_skip.Set(self.skip.for_show)
 
         self.restore.add_save_path(self.save_path)
-        self.restore.update_value(self.able, self.unable)
+        self.restore.update_value(able, self.unable)
         if self.restore.is_alive():
             self.restore.stop_(True)
             while self.restore.is_alive():
@@ -418,15 +473,15 @@ class PaintingWork(BaseWorkClass):
             path = self.__dialog.GetPath()
             num = 0
             self.form.m_gauge_all.SetValue(0)
-            for name in self.unable_restore_list:
+            for name in self.unable:
                 num += 1
+                name.add_save(path)
+                shutil.copyfile(name.tex_path, name.save_path)
 
-                shutil.copyfile(self.tex_list_path_dir[name], f'{path}\\{self.names[name]}.png')
-
-                self.form.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable_restore_list))))
+                self.form.m_gauge_all.SetValue(function.re_int(100 * (num / len(self.unable))))
 
             if self.full['auto_open']:
-                os.system(self.save_path)
+                os.system(r'"%s"' % self.save_path)
 
         # search
 
@@ -440,12 +495,14 @@ class PaintingWork(BaseWorkClass):
             self.mesh_search = True
 
             self.search_mesh_val.extend(self.info.build_search(indexes))
-            self.search_mesh_index = indexes
+
+            self.frame.m_menuItem_mesh_search.Enable(True)
 
             self.form.m_listBox_mesh.Clear()
             self.form.m_listBox_mesh.Set(self.search_mesh_val.for_show)
         else:
             self.mesh_search = False
+            self.frame.m_menuItem_tex_search.Enable(False)
             self.form.m_listBox_mesh.Clear()
             self.form.m_listBox_mesh.Set(self.info.for_show)
 
@@ -457,12 +514,14 @@ class PaintingWork(BaseWorkClass):
             self.tex_search = True
 
             self.search_tex_val.extend(self.info.build_search(indexes))
-            self.search_tex_index = indexes
+
+            self.frame.m_menuItem_tex_search.Enable(True)
 
             self.form.m_listBox_tex.Clear()
             self.form.m_listBox_tex.Set(self.search_tex_val.for_show)
         else:
             self.tex_search = False
+            self.frame.m_menuItem_tex_search.Enable(False)
             self.form.m_listBox_tex.Clear()
             self.form.m_listBox_tex.Set(self.info.for_show)
 
@@ -473,8 +532,6 @@ class PaintingWork(BaseWorkClass):
             indexes = function.find(value, self.skip.for_search)
 
             self.skip_search = True
-
-            self.search_pass_index = indexes
 
             self.search_skip_val.extend(self.skip.build_search(indexes))
 
@@ -493,7 +550,6 @@ class PaintingWork(BaseWorkClass):
 
             self.unable_search = True
 
-            self.search_unable_index = indexes
             self.search_unable_val.extend(self.info.build_search(indexes))
 
             self.form.m_listBox_unable.Clear()
@@ -525,20 +581,24 @@ class PaintingWork(BaseWorkClass):
 
         self.skip.clear()
 
-        self.restore = Threads.RestoreThread(1, 'restore', self)
+        self.restore = Threads.RestoreThread(1, 'restore', self.able, self.unable, self.frame, self.setting, self.full,
+                                             self.names, self.save_path)
         self.form.m_staticText_all.SetLabel("总进度：%s %%" % '0')
         self.form.m_gauge_all.SetValue(0)
 
     def update_setting(self, setting, default):
-        self.setting = setting["azur_lane"]
+        self.setting = setting.azur_lane_setting.to_dict()
 
-        self.full = setting["full"]
+        self.full = setting.full_setting.to_dict()
 
         self.default = default["azur_lane"]
 
         self.lock = default['lock']
 
+        print(self.setting)
+
         self.pattern_tex = re.compile(self.setting['tex_limit'])
+
         self.pattern_mesh = re.compile(self.setting['mesh_limit'])
 
     def update_names(self):
@@ -738,6 +798,243 @@ class EncryptImage(BaseWorkClass):
             self.frame.m_button_star.Enable(False)
 
 
+class Setting(BaseWorkClass):
+
+    def __init__(self, parent,
+                 setting_dic,
+                 default,
+                 def_path,
+                 able_add,
+                 ):
+        super().__init__(frame=parent)
+
+        self.path = def_path
+
+        self.default_tex_pattern = "^.+\\.[pP][Nn][Gg]$"
+        self.default_mesh_pattern = "^.+-mesh\\.[oO][Bb][jJ]$"
+        self.azur_lane_setting = InfoClasses.SettingHolder(setting_dic["azur_lane"])
+        self.full_setting = InfoClasses.SettingHolder(setting_dic["full"])
+
+        az_dict = {
+            'div_type': [self.frame.m_radioBox_az_div.SetSelection, self.frame.m_radioBox_az_div.GetSelection],
+            'export_type': [self.frame.m_radioBox_ex_type.SetSelection, self.frame.m_radioBox_ex_type.GetSelection],
+            'div_use': [self.frame.m_radioBox_type_use.SetSelection, self.frame.m_radioBox_type_use.GetSelection],
+
+            'new_dir': [self.frame.m_checkBox_add_dir.SetValue, self.frame.m_checkBox_add_dir.GetValue],
+            'export_with_cn': [self.frame.m_checkBox_in_cn.SetValue, self.frame.m_checkBox_in_cn.GetValue],
+
+            'tex_limit': [self.frame.m_textCtrl_tex_limit.SetLabel, self.frame.m_textCtrl_tex_limit.GetLabel],
+            'mesh_limit': [self.frame.m_textCtrl_mesh_limit.SetLabel, self.frame.m_textCtrl_mesh_limit.GetLabel],
+            'divide_list': [self.frame.m_checkList_az_limits.Set, None],
+
+            'input_use': [self.frame.m_radioBox_im.SetSelection, self.frame.m_radioBox_im.GetSelection]
+        }
+
+        full_dict = {
+            'open_dir': [self.frame.m_checkBox_autoopen.SetValue,
+                         self.frame.m_checkBox_autoopen.GetValue],
+            'skip_had': [self.frame.m_checkBox_pass_finished.SetValue,
+                         self.frame.m_checkBox_pass_finished.GetValue],
+            'auto_open': [self.frame.m_checkBox_open_temp.SetValue,
+                          self.frame.m_checkBox_open_temp.GetValue],
+            'finish_exit': [self.frame.m_checkBox4_finish_exit.SetValue,
+                            self.frame.m_checkBox4_finish_exit.GetValue],
+            'clear_list': [self.frame.m_checkBox_clear.SetValue,
+                           self.frame.m_checkBox_clear.GetValue],
+            'save_all': [self.frame.m_checkBox_save_all.SetValue,
+                         self.frame.m_checkBox_save_all.GetValue],
+        }
+
+        self.azur_lane_setting.link_dict(az_dict)
+        self.full_setting.link_dict(full_dict)
+
+        io_group_1 = [
+            self.frame.m_bpButton_del,
+            self.frame.m_bpButton_add,
+
+            self.frame.m_bpButton_up,
+            self.frame.m_bpButton_down,
+
+            self.frame.m_bpButton6_default_mesh,
+            self.frame.m_bpButton_defualt_tex,
+
+            self.frame.m_checkList_az_limits,
+            self.frame.m_staticText15,
+            self.frame.m_staticText161,
+            self.frame.m_staticText171,
+
+            self.frame.m_textCtrl_mesh_limit,
+            self.frame.m_textCtrl_tex_limit,
+        ]
+        io_group_2 = [
+            self.frame.m_radioBox_im,
+            self.frame.m_radioBox_az_div,
+        ]
+
+        self.work_io_1 = InfoClasses.TeamWork(io_group_1,
+                                              [functools.partial(self.frame.m_textCtrl_mesh_limit.SetLabel,
+                                                                 label=self.default_mesh_pattern),
+                                               functools.partial(self.frame.m_textCtrl_mesh_limit.SetLabel,
+                                                                 label=self.azur_lane_setting.mesh_limit.value)],
+                                              [functools.partial(self.frame.m_textCtrl_tex_limit.SetLabel,
+                                                                 self.default_tex_pattern),
+                                               functools.partial(self.frame.m_textCtrl_tex_limit.SetLabel,
+                                                                 self.azur_lane_setting.tex_limit.value)],
+                                              )
+        self.work_io_2 = InfoClasses.TeamWork(io_group_2, )
+
+        self.divide_list: InfoClasses.PattenEdit = self.azur_lane_setting.divide_list
+
+        self.change_input()
+        self.change_div()
+
+        self.default = default
+
+        self.IsChange = False
+        self.lock = self.default["lock"]
+        self.export = self.default["export"]
+
+        self.az_div_list = []
+
+        self.index = len(self.az_div_list) + 1
+
+        self.__choice = -1
+        self.frame.m_bpButton_del.Enable(False)
+        self.frame.m_bpButton_up.Enable(False)
+        self.frame.m_bpButton_down.Enable(False)
+
+        self.frame.m_bpButton6_default_mesh.Enable(False)
+        # self.frame.m_bpButton_default_tex.Enable(False)
+
+        self.tex_work = False
+        self.mesh_work = False
+
+        self.able_add = able_add
+
+        self.frame.m_radioBox_im.Enable(False)
+
+        self.frame.m_choice_type_in.Enable(False)
+        self.frame.m_choice_type.Enable(False)
+
+        self.names = {}
+
+        # print(self.azur_lane_setting)
+
+    def io_type_change(self, selection):
+        if selection == 0:
+            self.work_io_1(False)
+            self.work_io_2(True)
+        if selection == 1:
+            self.work_io_1(True)
+            self.work_io_2(False)
+        else:
+            pass
+
+    def initial(self):
+        self.azur_lane_setting.initial_val()
+        self.full_setting.initial_val()
+        self.io_type_change(self.azur_lane_setting.div_use.value)
+
+    def change_work(self):
+        self.azur_lane_setting.get_value()
+        self.full_setting.get_value()
+
+        # print(self.azur_lane_setting)
+        # print(self.full_setting)
+        self.lock = self.default['lock'] = self.frame.m_toggleBtn_lock.GetValue()
+
+        if self.lock:
+            self.default["azur_lane"]['default_tex_dir'] = self.frame.m_dirPicker_az_tex_dir.GetPath()
+            self.default["azur_lane"]['default_mesh_dir'] = self.frame.m_dirPicker_az_mesh_dir.GetPath()
+
+            self.default['export'] = self.frame.m_dirPicker_export.GetPath()
+
+        with open(self.path + "\\files\\names.json", 'w')as file:
+            json.dump(self.names, file)
+
+    def lock_address(self):
+
+        self.lock = self.default['lock'] = self.frame.m_toggleBtn_lock.GetValue()
+
+        self.frame.m_dirPicker_export.Enable(not self.lock)
+
+        self.frame.m_dirPicker_az_mesh_dir.Enable(not self.lock)
+        self.frame.m_dirPicker_az_tex_dir.Enable(not self.lock)
+
+    def choice(self, ):
+        self.__choice = self.frame.m_checkList_az_limits.GetSelection()
+
+        if self.__choice != 0:
+            self.frame.m_bpButton_del.Enable(True)
+        if self.__choice <= 1:
+            self.frame.m_bpButton_up.Enable(False)
+        else:
+            self.frame.m_bpButton_up.Enable(True)
+        if self.__choice == len(self.azur_lane_setting.divide_list) - 1 or self.__choice == 0:
+            self.frame.m_bpButton_down.Enable(False)
+        else:
+            self.frame.m_bpButton_down.Enable(True)
+
+    def change_div(self, ):
+
+        if self.frame.m_radioBox_type_use.GetSelection() == 0:
+            if self.frame.m_radioBox_az_div.GetSelection() == 2:
+
+                self.frame.m_checkList_az_limits.Clear()
+                self.frame.m_checkList_az_limits.Set([
+                    r'1）其他：^.+$',
+                    r'2）皮肤：^[a-zA-Z0-9_]+_\d$',
+                    r'3）改造：^[a-zA-Z0-9_]+_[gG]$',
+                    r'4）婚纱：^[a-zA-Z0-9_]+_[hH]$',
+                    r'5）原皮：^[a-zA-Z0-9_]+$',
+                ])
+            else:
+                self.frame.m_checkList_az_limits.Clear()
+
+    def change_input(self, ):
+
+        if self.frame.m_radioBox_type_use.GetSelection() == 0:
+            choice = self.frame.m_radioBox_im.GetSelection()
+            tex = [
+                r'^.+\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_\d\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_[Hh]\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+_[Gg]\.[Pp][Nn][Gg]$',
+                r'^[^_\s]+(_younv){0,1}\.[Pp][Nn][Gg]$',
+            ]
+            mesh = [
+                r'^.+-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_\d-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_[Hh]-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+_[Gg]-mesh\.[oO][Bb][Jj]$',
+                r'^[^_\s]+(_younv){0,1}-mesh\.[oO][Bb][Jj]$',
+            ]
+            if choice == 0:
+                self.frame.m_textCtrl_tex_limit.SetLabel(tex[0])
+                self.frame.m_textCtrl_mesh_limit.SetLabel(mesh[0])
+            elif choice == 1:
+                self.frame.m_textCtrl_tex_limit.SetLabel(tex[1])
+                self.frame.m_textCtrl_mesh_limit.SetLabel(mesh[1])
+            elif choice == 2:
+                self.frame.m_textCtrl_tex_limit.SetLabel(tex[2])
+                self.frame.m_textCtrl_mesh_limit.SetLabel(mesh[2])
+            elif choice == 3:
+                self.frame.m_textCtrl_tex_limit.SetLabel(tex[3])
+                self.frame.m_textCtrl_mesh_limit.SetLabel(mesh[3])
+            elif choice == 4:
+                self.frame.m_textCtrl_tex_limit.SetLabel(tex[4])
+                self.frame.m_textCtrl_mesh_limit.SetLabel(mesh[4])
+            else:
+                pass
+        self.frame.m_bpButton_defualt_tex.Enable(False)
+        self.frame.m_bpButton6_default_mesh.Enable(False)
+
+    def exit(self):
+        var = {"azur_lane": self.azur_lane_setting.to_dict(), "full": self.full_setting.to_dict()}
+
+        return var, self.default
+
+
 class CryptImage(EncryptImage):
     def __init__(self, frame: noname.MyDialog_Setting):
         super(CryptImage, self).__init__(frame)
@@ -782,54 +1079,6 @@ class CryptImage(EncryptImage):
             self.frame.m_button_star_in.Enable(False)
 
 
-class Add(object):
-    def __init__(self, parent: noname.MyDialog_Setting, name_list, names, start_path):
-
-        self.parent = parent
-        self.name_list = name_list
-        self.need_add = []
-        self.need_add_show = []
-        self.finish_num = 0
-
-        self.start_path = start_path
-
-        self.names = names
-
-    def get_new_dic(self):
-        return self.names
-
-    def show_info(self):
-        for name in self.name_list:
-            if name not in self.names.keys():
-                self.need_add.append(name)
-                self.need_add_show.append("%s: " % name)
-
-        self.parent.m_listBox_new.Set(self.need_add_show)
-
-    def open_add_name(self):
-        index = self.parent.m_listBox_new.GetSelection()
-        value = self.need_add[index]
-        if value in self.names.keys():
-            value_cn = self.names[value]
-        else:
-            value_cn = ''
-
-        writer = FrameClasses.Writer(self.parent, value, value_cn)
-        writer.ShowModal()
-        if writer.is_able():
-            name = writer.GetValue()
-            if name != '':
-                self.finish_num += 1
-            elif value in self.names.keys() and name == '':
-                self.finish_num -= 1
-            self.names[value] = name
-            self.need_add_show[index] = "%s：%s" % (self.need_add[index], name)
-
-            self.parent.m_listBox_new.SetString(index, self.need_add_show[index])
-        scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
-        self.parent.m_gauge5.SetValue(scale)
-
-
 class Compare:
     def __init__(self, parent: noname.MyDialog_Setting):
         self.frame = parent
@@ -870,77 +1119,137 @@ class Compare:
         self.thread.start()
 
 
-class ChangeName:
-    def __init__(self, parent: noname.MyDialog_Setting, start_path):
-        self.frame = parent
+class EditName(BaseWorkClass):
+    def __init__(self,
+                 parent: noname.MyDialog_Setting = ...,
+                 info: InfoClasses.PerWorkList = ...,
+                 start_path: str = ...
+                 ):
+        super().__init__(parent)
 
         self.start_path = start_path
 
         with open("%s\\files\\names.json" % self.start_path, 'r')as file:
-            self.names = json.load(file)
+            self.name_edit = InfoClasses.NamesEdit.form_dict(json.load(file))
 
-        self.show_list = []
-        self.key_list = []
-        self.searched_list = []
+        self.add_new_name = InfoClasses.NamesEdit.form_dict({})
 
-        self.searched_show = []
-        self.search_list = []
+        self.search = InfoClasses.NamesEdit()
 
-        self.searched = False
+        self.need_add = InfoClasses.NamesEdit(info.build_no_cn())
 
-    def show_all(self):
-        num = 0
-        for index in self.names.keys():
-            num += 1
-            self.show_list.append("%d）\t%s：%s" % (num, index, self.names[index]))
-            self.key_list.append(index)
-            self.searched_list.append("%s%s" % (index, self.names[index]))
+        self.finish_num = 0
+        print(self.name_edit)
+
+    def initial(self):
+        self.change_name_init()
+        self.add_init()
+
+    def change_name_init(self):
         self.frame.m_listBox_change.Clear()
-        self.frame.m_listBox_change.Set(self.show_list)
+        self.frame.m_listBox_change.Set(self.name_edit.for_show)
 
     def change_name(self):
-        index = self.frame.m_listBox_change.GetSelection()
-        if not self.searched:
-            name = self.key_list[index]
-        else:
-            name = self.search_list[index]
-        name_cn = self.names[name]
 
-        writer = FrameClasses.Writer(self.frame, name, name_cn)
+        index = self.frame.m_listBox_change.GetSelection()
+        if not self.search:
+            name = self.name_edit[index]
+        else:
+            name = self.search[index]
+
+        writer = FrameClasses.Writer(self.frame, name)
         writer.ShowModal()
         if writer.is_able():
-            name_cn = writer.GetValue()
+            value = writer.GetValue()
 
-            self.names[name] = name_cn
+            self.name_edit.edit(value.name, value.val)
+            if not self.search:
+                index = self.name_edit.get_index(value)
+            else:
+                self.search.edit(value.name, value)
+                index = self.search.get_index(value)
 
-            self.show_list[index] = "%d）\t%s：%s" % (index + 1, self.key_list[index], self.names[self.key_list[index]])
-            self.key_list[index] = name
-
-            self.frame.m_listBox_change.SetString(index, self.show_list[index])
+            self.frame.m_listBox_change.SetString(index, value.get_show(index))
 
     def searching(self):
         value = self.frame.m_searchCtrl2.GetValue()
         if value != '':
-            self.searched = True
-            indexes = function.find(value, self.searched_list)
 
-            self.searched_show.clear()
+            indexes = function.find(value, self.name_edit.for_search)
 
-            self.search_list.clear()
-
-            for index in indexes:
-                self.searched_show.append(self.show_list[index])
-                self.search_list.append(self.key_list[index])
-
+            self.search = self.name_edit.build_search(indexes)
+            self.frame.m_listBox_change.Clear()
+            self.frame.m_listBox_change.Set(self.search.for_show)
         else:
-            self.searched_show = self.show_list.copy()
-            self.search_list = self.key_list.copy()
-            self.searched = False
-        self.frame.m_listBox_change.Clear()
-        self.frame.m_listBox_change.Set(self.searched_show)
+            self.search.clear()
+            self.frame.m_listBox_change.Clear()
+            self.frame.m_listBox_change.Set(self.name_edit.for_show)
+
+    def add_init(self):
+
+        self.frame.m_listBox_new.Set(self.need_add.for_show)
+
+    def open_add_name(self):
+        index = self.frame.m_listBox_new.GetSelection()
+        value = self.need_add[index]
+
+        writer = FrameClasses.Writer(self.frame, value)
+        writer.ShowModal()
+        if writer.is_able():
+            value = writer.GetValue()
+            self.finish_num += 1
+            self.need_add.set_self(value.name, value)
+            index = self.need_add.get_index(value)
+
+            self.frame.m_listBox_new.SetString(index, self.need_add[index].get_show(index + 1))
+        else:
+            self.finish_num -= 1
+
+        scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
+        self.frame.m_gauge5.SetValue(scale)
+
+    def add_new(self):
+        dialog = FrameClasses.AddNewName(self.frame)
+        dialog.ShowModal()
+        if dialog.work:
+            key, value = dialog.get_value()
+            bo = self.add_new_name.append(key, value)
+
+            if not bo:
+                self.frame.m_listBox_new1.Append(self.add_new_name.for_show[-1])
+            else:
+                index = self.add_new_name.get_index(key)
+                self.frame.m_listBox_new1.SetString(index, self.add_new_name.for_show[index])
+
+    def del_name(self, index):
+        dialog = wx.MessageBox(f'你确实要删除\n{self.name_edit[index]}吗？', '提示', wx.YES_NO)
+        if dialog == wx.YES:
+
+            self.add_new_name.del_name(index)
+
+            self.frame.m_listBox_new1.Clear()
+            self.frame.m_listBox_new1.Set(self.add_new_name.for_show)
+        else:
+            pass
+
+    def edit_name(self, index):
+
+        dialog = FrameClasses.AddNewName(self.frame, self.name_edit[index].name, self.name_edit[index])
+        dialog.ShowModal()
+        if dialog.work:
+            key, value = dialog.get_value()
+            self.add_new_name.edit(key, value)
+            self.frame.m_listBox_new1.SetString(index, self.add_new_name.for_show[index])
 
     def get_change(self):
-        return self.names
+        return self.name_edit
+
+    def exit(self):
+        var = self.name_edit.form_dict()
+        with open("%s\\files\\names.json" % self.start_path, 'w')as file:
+            json.dump(var, file)
+
+        return var
 
 
 class FileDropLoad(wx.FileDropTarget):
@@ -950,7 +1259,12 @@ class FileDropLoad(wx.FileDropTarget):
         self.parent = parent
 
     def OnDropFiles(self, x, y, filenames):
-        val, info = self.work.drop_work(filenames)
-        if not val:
-            self.parent.append_error(info)
-        return val
+        try:
+            func = functools.partial(self.work.drop_work, filenames)
+            thread = threading.Thread(target=func)
+
+            thread.start()
+        except:
+            return False
+        else:
+            return True
