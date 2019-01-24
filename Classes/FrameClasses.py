@@ -59,11 +59,7 @@ class MainFrame(noname.MyFrame1):
         self.error_list = []
 
         if self.is_open_give:
-            def give():
-                self.painting.open_give(self.open_give)
-
-            thread = threading.Thread(target=give())
-            thread.start()
+            self.painting.open_give(self.open_give)
 
     def append_error(self, error_info):
         self.m_listBox_errors.Append(error_info)
@@ -75,39 +71,25 @@ class MainFrame(noname.MyFrame1):
     # file load method
     # azur lane
     def load_tex(self, event):
-        thread = threading.Thread(target=self.painting.load_tex)
-
-        thread.start()
+        self.painting.load_tex()
 
     def load_Mesh(self, event):
-        thread = threading.Thread(target=self.painting.load_mesh)
-
-        thread.start()
+        self.painting.load_mesh()
 
     def load_body(self, event):
-        thread = threading.Thread(target=self.spine_cut.load_body)
-
-        thread.start()
+        self.spine_cut.load_body()
 
     def load_cut(self, event):
-        thread = threading.Thread(target=self.spine_cut.load_cuter)
-
-        thread.start()
+        self.spine_cut.load_cuter()
 
     def load_mesh_fold(self, event):
-        thread = threading.Thread(target=self.painting.load_mesh_fold)
-
-        thread.start()
+        self.painting.load_mesh_fold()
 
     def load_tex_fold(self, event):
-        thread = threading.Thread(target=self.painting.load_tex_fold)
-
-        thread.start()
+        self.painting.load_tex_fold()
 
     def load_tex_and_mesh(self, event):
-        thread = threading.Thread(target=self.painting.load_tex_and_mesh)
-
-        thread.start()
+        self.painting.load_tex_and_mesh()
 
     # choice
     def mesh_choice(self, event):
@@ -229,10 +211,9 @@ class MainFrame(noname.MyFrame1):
         self.spine_cut.reset()
 
     def exit(self, thread_exit=False):
-        var = {'azur_lane': self.setting_self.azur_lane_setting.to_dict(),
-               'full': self.setting_self.azur_lane_setting.to_dict()}
+
         with open("%s\\files\\setting.json" % self.start_path, 'w')as file_save:
-            json.dump(var, file_save)
+            json.dump(self.setting_self, file_save)
         with open("%s\\files\\default.json" % self.start_path, 'w')as file_:
             json.dump(self.default, file_)
         if thread_exit:
@@ -280,9 +261,8 @@ class MainFrame(noname.MyFrame1):
                 thread = Threads.BackInfo(self.painting)
                 thread.start()
 
-                setting_dic = dialog.GetValue()
                 self.default = dialog.GetDefault()
-                self.setting_self = setting_dic
+                self.setting_self = dialog.GetValue()
 
                 self.painting.update_setting(self.setting_self, self.default)
 
@@ -315,17 +295,29 @@ class Writer(noname.MyDialog_enter_name):
         noname.MyDialog_enter_name.__init__(self, parent)
 
         self.info = info
+        self.ok = False
 
     def show_name(self, event):
         self.m_staticText8.SetLabel("%s: " % self.info.name)
         self.m_textCtrl2.SetValue(self.info.val)
 
     def save_name(self, event):
-        self.info.val = self.m_textCtrl2.GetValue()
+        if self.info.name == self.m_textCtrl2.GetValue():
+            self.ok = False
+            if self.m_checkBox_real.GetValue():
+                self.ok = True
+                self.info.has_cn = True
+        else:
+            self.info.val = self.m_textCtrl2.GetValue()
+            self.ok = True
+            self.info.has_cn = True
         self.Destroy()
 
+    def save_key(self, event):
+        print(event)
+
     def is_able(self):
-        return self.info.has_cn
+        return self.ok
 
     def GetValue(self):
         return self.info
@@ -393,7 +385,7 @@ class SettingFrame(noname.MyDialog_Setting):
     def ok_click(self, event):
         self.set_val.change_work()
         self._is_change = True
-        self.Destroy()
+        self.close()
 
     def apply_click(self, event):
         self.set_val.change_work()
@@ -402,7 +394,7 @@ class SettingFrame(noname.MyDialog_Setting):
 
     def cancel_click(self, event):
         self._is_change = False
-        self.Destroy()
+        self.close()
 
     # 名称编辑，添加部分
     def edit_add_name(self, event):
@@ -433,6 +425,10 @@ class SettingFrame(noname.MyDialog_Setting):
         self.m_simplebook_io.SetSelection(selection)
         self.change(event)
         self.set_val.io_type_change(selection)
+
+    def change_input(self, event):
+        self.set_val.change_input()
+        self.change(event)
 
     def menu_setting(self, event):
         self.change(event)
@@ -558,7 +554,10 @@ class SettingFrame(noname.MyDialog_Setting):
 
     # 获取值的方法
     def GetValue(self):
-        return self.set_val
+        return {
+            'azur_lane': self.set_val.azur_lane_setting.to_dict(),
+            'full': self.set_val.full_setting.to_dict()
+        }
 
     def GetDefault(self):
         return self.set_val.default
@@ -570,10 +569,12 @@ class SettingFrame(noname.MyDialog_Setting):
         return self.var
 
     # 退出
-    def close(self, event):
+    def close(self, event=None):
         self.set_val.azur_lane_setting.divide_list = self.pattern_edit
 
         self.var = self.edit_name.exit()
+
+        self.Destroy()
 
 
 class AddPattern(noname.MyDialog_limit):

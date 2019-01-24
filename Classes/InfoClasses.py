@@ -30,7 +30,6 @@ class BasicInfo(object):
     def rebuild_self(self, value):
 
         if isinstance(value, BasicInfo):
-
             self.val = value.val
 
 
@@ -259,8 +258,10 @@ class PerWork(BasicInfo):
     def update_name(self, names: dict):
         if self.name in names.keys():
             self.name_cn = names[self.name]
+            self.has_cn = True
         else:
             self.name_cn = self.name
+            self.has_cn = False
 
     def rebuild_self(self, value):
 
@@ -283,6 +284,12 @@ class PerWork(BasicInfo):
 
         else:
             raise ValueError
+
+    def clear_tex(self):
+        self.tex_path = ''
+
+    def clear_mesh(self):
+        self.mesh_path = ''
 
 
 class PerWorkList(BasicInfoList):
@@ -362,6 +369,12 @@ class PerWorkList(BasicInfoList):
         self.for_search.clear()
         self.for_show.clear()
 
+    def clear_tex(self):
+        list(map(lambda x: x.clear_tex(), self))
+
+    def clear_mesh(self):
+        list(map(lambda x: x.clear_mesh(), self))
+
     def up_date_name_cn(self, name_cn: dict):
         list(map(lambda _x: _x.update_name(name_cn), self))
 
@@ -393,9 +406,7 @@ class PerWorkList(BasicInfoList):
 
     def build_search(self, indexes):
         val = (map(lambda _x: self[_x], indexes))
-        cla = PerWorkList()
-
-        list(map(lambda _x: cla.append_self(_x), val))
+        cla = PerWorkList(val)
 
         return cla
 
@@ -405,6 +416,9 @@ class PerWorkList(BasicInfoList):
         cla = PerWorkList(val)
 
         return cla
+
+    def get_new(self, item: collections.abc.Iterable):
+        return PerWorkList(filter(lambda x: x not in self, item))
 
 
 class PerSetting(BasicInfo):
@@ -612,6 +626,9 @@ class PerEdit(BasicInfo):
         self.get_show = lambda x: f"{x}）键->{self.name}；值->{self.val}"
         self.get_search = lambda: f"{self.name}{self.val}"
 
+    def set_has_cn(self, bo: bool = False):
+        self.has_cn = bo
+
 
 class NamesEdit(BasicInfoList):
     def __init__(self, names=None):
@@ -646,6 +663,10 @@ class NamesEdit(BasicInfoList):
             values = {}
         return NamesEdit([PerEdit(key_, value_, True) for key_, value_ in values.items()])
 
+    def extend(self, values):
+        if isinstance(values, collections.abc.Iterable):
+            list(map(lambda _x: self.append_self(PerEdit(_x.name, _x.val, _x.has_cn)), values))
+
     def for_dict(self):
         var = {}
         for key in self._key_list:
@@ -662,7 +683,7 @@ class NamesEdit(BasicInfoList):
             self[key] = PerEdit(key, value, True)
             return False or has_info
 
-    def edit(self, index, value):
+    def edit(self, index, value, has_cn=False):
         self[index] = PerEdit(self[index].name, value, self[index].has_cn)
 
     def del_name(self, index):
@@ -687,8 +708,8 @@ class NamesEdit(BasicInfoList):
         val = (self[index] for index in indexes)
         return NamesEdit(val)
 
-    def build_no_cn(self):
-        val = filter(lambda x: not x.has_cn, self)
+    def build_cn(self):
+        val = filter(lambda x: x.has_cn, self)
         return NamesEdit(val)
 
     def append_name(self, name, val, *, has_cn=False):
@@ -698,6 +719,21 @@ class NamesEdit(BasicInfoList):
             pass
 
         return name
+
+    def _mix(self, dicts: dict):
+        for key in dicts.keys():
+            if key in self:
+                self.edit(key, dicts[key])
+            else:
+                self.append(key, dicts[key], True)
+
+    def mix(self, *values):
+        for value in values:
+            self._mix(value)
+
+    def build_has(self):
+        var = map(lambda x: not x.has_cn, self)
+        return NamesEdit(var)
 
 
 class TeamWork(object):

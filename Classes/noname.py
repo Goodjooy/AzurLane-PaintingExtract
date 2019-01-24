@@ -841,7 +841,7 @@ class MyDialogQuick ( wx.Dialog ):
 class MyDialog_enter_name ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 357,105 ), style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 357,126 ), style = wx.DEFAULT_DIALOG_STYLE )
 
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
@@ -860,6 +860,9 @@ class MyDialog_enter_name ( wx.Dialog ):
 
 
 		bSizer9.Add( gSizer4, 0, wx.EXPAND, 5 )
+
+		self.m_checkBox_real = wx.CheckBox( self, wx.ID_ANY, u"已确认为名", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+		bSizer9.Add( self.m_checkBox_real, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
 		m_sdbSizer4 = wx.StdDialogButtonSizer()
 		self.m_sdbSizer4Save = wx.Button( self, wx.ID_SAVE )
@@ -899,7 +902,7 @@ class MyDialog_enter_name ( wx.Dialog ):
 class MyDialog_Setting ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"设置", pos = wx.DefaultPosition, size = wx.Size( 691,500 ), style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"设置", pos = wx.DefaultPosition, size = wx.Size( 720,480 ), style = wx.DEFAULT_DIALOG_STYLE )
 
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
@@ -1035,7 +1038,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_scrolledWindow7.SetSizer( gSizer15 )
 		self.m_scrolledWindow7.Layout()
 		gSizer15.Fit( self.m_scrolledWindow7 )
-		self.m_notebook3.AddPage( self.m_scrolledWindow7, u"其他设置", True )
+		self.m_notebook3.AddPage( self.m_scrolledWindow7, u"其他设置", False )
 		self.m_panel20 = wx.Panel( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer32 = wx.BoxSizer( wx.VERTICAL )
 
@@ -1183,7 +1186,7 @@ class MyDialog_Setting ( wx.Dialog ):
 		self.m_panel20.SetSizer( bSizer32 )
 		self.m_panel20.Layout()
 		bSizer32.Fit( self.m_panel20 )
-		self.m_notebook3.AddPage( self.m_panel20, u"设置-导入导出", False )
+		self.m_notebook3.AddPage( self.m_panel20, u"设置-导入导出", True )
 		self.m_panel12 = wx.Panel( self.m_notebook3, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		gSizer18 = wx.GridSizer( 0, 2, 0, 0 )
 

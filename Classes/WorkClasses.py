@@ -120,16 +120,13 @@ class PaintingWork(BaseWorkClass):
             self.form.m_gauge_tex_load.SetValue(0)
             paths = self.__dialog.GetPaths()
 
-            if self.full['clear_list']:
-                self.info.clear()
-
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, True, '',
                                         self.names, self.tex_type)
             if returned[0]:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(
-                    self.info.for_show)
+                self.form.m_listBox_tex.Clear()
+                self.form.m_listBox_tex.Set(self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(returned[1])
             address = paths
         else:
@@ -152,17 +149,15 @@ class PaintingWork(BaseWorkClass):
             self.form.m_gauge_mesh_load.SetValue(0)
             paths = self.__dialog.GetPaths()
 
-            if self.full['clear_list']:
-                self.info.clear()
-
             returned = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_mesh, True, "-mesh",
                                         self.names, self.mesh_type)
 
             if returned[0]:
                 self.form.m_gauge_mesh_load.SetValue(function.re_int(100))
 
-                self.form.m_listBox_mesh.Set(
-                    self.info.for_show)
+                self.form.m_listBox_mesh.Clear()
+                self.form.m_listBox_mesh.Set(self.info.for_show)
+
             self.form.m_staticText_mesh_load.SetLabel(returned[1])
 
             address = paths
@@ -191,16 +186,13 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
-            if self.full['clear_list']:
-                self.info.clear()
-
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'],
                                               self.pattern_mesh, False, "-mesh", self.names, self.mesh_type)
             if returned:
                 self.form.m_gauge_mesh_load.SetValue(100)
                 self.form.m_staticText_mesh_load.SetLabel(info)
-                self.form.m_listBox_mesh.Set(
-                    self.info.for_show)
+                self.form.m_listBox_mesh.Clear()
+                self.form.m_listBox_mesh.Set(self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(info)
             address = self.__dialog.GetPath()
         else:
@@ -227,16 +219,13 @@ class PaintingWork(BaseWorkClass):
 
             paths = function.all_file_path(paths)[1]
 
-            if self.full['clear_list']:
-                self.info.clear()
-
             returned, info = tools.file_deal2(paths, self.info, self.full['clear_list'], self.pattern_tex, False, '',
                                               self.names, self.tex_type)
             if returned:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(
-                    self.info.for_show)
+                self.form.m_listBox_tex.Clear()
+                self.form.m_listBox_tex.Set(self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(info)
 
             address = self.__dialog.GetPath()
@@ -272,14 +261,16 @@ class PaintingWork(BaseWorkClass):
             if returned_tex:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(
-                    self.info.for_show)
+                self.form.m_listBox_tex.Clear()
+                self.form.m_listBox_tex.Set(self.info.for_show)
+
             self.form.m_staticText_load_tex.SetLabel(tex_info)
             if returned_mesh:
                 self.form.m_gauge_mesh_load.SetValue(100)
 
-                self.form.m_listBox_mesh.Set(
-                    self.info.for_show)
+                self.form.m_listBox_mesh.Clear()
+                self.form.m_listBox_mesh.Set(self.info.for_show)
+
             self.form.m_staticText_mesh_load.SetLabel(mesh_info)
 
             address = self.__dialog.GetPath()
@@ -302,8 +293,8 @@ class PaintingWork(BaseWorkClass):
 
             file_names = (filter(lambda x: os.path.isfile(x), file_names))
 
-            if self.full['clear_list']:
-                self.info.clear()
+            # if self.full['clear_list']:
+            #      self.info.clear()
 
             paths = list(filter(lambda x: re.match(r'^UISprite\s#\d+\.png$', os.path.basename(x)) is None, file_names))
 
@@ -315,12 +306,13 @@ class PaintingWork(BaseWorkClass):
             if returned_tex:
                 self.form.m_gauge_tex_load.SetValue(100)
 
-                self.form.m_listBox_tex.Set(
-                    self.info.for_show)
+                self.form.m_listBox_tex.Clear()
+                self.form.m_listBox_tex.Set(self.info.for_show)
             self.form.m_staticText_load_tex.SetLabel(tex_info)
             if returned_mesh:
                 self.form.m_gauge_mesh_load.SetValue(100)
 
+                self.form.m_listBox_mesh.Clear()
                 self.form.m_listBox_mesh.Set(self.info.for_show)
             self.form.m_staticText_mesh_load.SetLabel(mesh_info)
 
@@ -367,6 +359,7 @@ class PaintingWork(BaseWorkClass):
             self.choice = self.info.build_search(indexes)
 
         last = last.get_new(self.choice)
+        # print(type(last[-1]))
 
         if len(last) > 0:
             if last.is_all_able():
@@ -409,16 +402,29 @@ class PaintingWork(BaseWorkClass):
 
     # export
     def export_choice(self):
-        self.__dialog = wx.FileDialog(self.form, "保存", os.getcwd(), self.names[self.choice], "*.png", style=wx.FD_SAVE)
+        self.__dialog = wx.DirDialog(self.form, "保存", os.getcwd(), style=wx.DD_NEW_DIR_BUTTON)
 
         if self.__dialog.ShowModal() == wx.ID_OK:
             self.form.m_gauge_all.SetValue(0)
             self.save_path = self.__dialog.GetPath()
+            self.restart()
 
-            shutil.copy(f"{self.start_path}\\temp.png", self.save_path)
+            able = self.choice.build_able()
+            unable = self.choice.build_unable()
+
+            self.restore.add_save_path(self.save_path)
+            self.restore.update_value(able, unable)
+
+            if self.restore.is_alive():
+                self.restore.stop_(True)
+                while self.restore.is_alive():
+                    time.sleep(1)
+                self.restore.start()
+            else:
+                self.restore.start()
 
         self.form.m_gauge_all.SetValue(100)
-        if self.full['auto_open']:
+        if self.full['auto_open'] and self.restore.is_alive():
             os.system(r'"start %s"' % self.save_path)
 
     def export_all(self, path, for_work: InfoClasses.PerWorkList = None, for_unable: InfoClasses.PerWorkList = None):
@@ -563,9 +569,9 @@ class PaintingWork(BaseWorkClass):
 
     # else
     def able_export(self):
-        self.able.extend(self.info.build_able())
+        self.able = self.info.build_able()
 
-        self.unable.extend(self.info.build_unable())
+        self.unable = self.info.build_unable()
 
         self.form.m_listBox_unable.Clear()
         self.form.m_listBox_unable.Set(self.unable.for_show)
@@ -587,15 +593,13 @@ class PaintingWork(BaseWorkClass):
         self.form.m_gauge_all.SetValue(0)
 
     def update_setting(self, setting, default):
-        self.setting = setting.azur_lane_setting.to_dict()
+        self.setting = setting['azur_lane']
 
-        self.full = setting.full_setting.to_dict()
+        self.full = setting['full']
 
         self.default = default["azur_lane"]
 
         self.lock = default['lock']
-
-        print(self.setting)
 
         self.pattern_tex = re.compile(self.setting['tex_limit'])
 
@@ -611,10 +615,10 @@ class PaintingWork(BaseWorkClass):
         self.able.up_date_name_cn(self.names)
         self.skip.up_date_name_cn(self.names)
 
-        self.form.m_listBox_mesh.Set(self.info.for_show)
-        self.form.m_listBox_tex.Set(self.info.for_show)
-        self.form.m_listBox_skip.Set(self.skip.for_show)
-        self.form.m_listBox_unable.Set(self.unable.for_show)
+        self.search_mesh()
+        self.search_tex()
+        self.search_unable()
+        self.search_pass()
 
     def info_check(self):
         if self.able_export():
@@ -939,8 +943,6 @@ class Setting(BaseWorkClass):
         self.azur_lane_setting.get_value()
         self.full_setting.get_value()
 
-        # print(self.azur_lane_setting)
-        # print(self.full_setting)
         self.lock = self.default['lock'] = self.frame.m_toggleBtn_lock.GetValue()
 
         if self.lock:
@@ -975,7 +977,7 @@ class Setting(BaseWorkClass):
         else:
             self.frame.m_bpButton_down.Enable(True)
 
-    def change_div(self, ):
+    def change_div(self):
 
         if self.frame.m_radioBox_type_use.GetSelection() == 0:
             if self.frame.m_radioBox_az_div.GetSelection() == 2:
@@ -1138,8 +1140,11 @@ class EditName(BaseWorkClass):
 
         self.need_add = InfoClasses.NamesEdit(info.build_no_cn())
 
+        self.need_add.all_to_false = lambda: list(map(lambda x: x.set_has_cn(), self.need_add))
+
+        self.need_add.all_to_false()
+
         self.finish_num = 0
-        print(self.name_edit)
 
     def initial(self):
         self.change_name_init()
@@ -1198,12 +1203,12 @@ class EditName(BaseWorkClass):
         if writer.is_able():
             value = writer.GetValue()
             self.finish_num += 1
-            self.need_add.set_self(value.name, value)
+            self.need_add[value.name] = value
             index = self.need_add.get_index(value)
 
             self.frame.m_listBox_new.SetString(index, self.need_add[index].get_show(index + 1))
         else:
-            self.finish_num -= 1
+            pass
 
         scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
         self.frame.m_gauge5.SetValue(scale)
@@ -1245,7 +1250,10 @@ class EditName(BaseWorkClass):
         return self.name_edit
 
     def exit(self):
-        var = self.name_edit.form_dict()
+        val = self.need_add.build_cn().for_dict()
+        # print(val)
+        self.name_edit.mix(self.add_new_name.for_dict(), val)
+        var = self.name_edit.for_dict()
         with open("%s\\files\\names.json" % self.start_path, 'w')as file:
             json.dump(var, file)
 

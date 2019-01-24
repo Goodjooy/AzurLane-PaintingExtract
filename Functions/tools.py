@@ -92,20 +92,19 @@ def file_deal(paths, set_list: list, list_search: list, list_enter: list, file_p
 def info_write2_builder(is_file, dict_path, replace_str, info_list,
                         names, type_set):
     def info_write(path):
-        num = path[1] + 1
         if not is_file:
-            name = path[0]
+            name = path
             path = dict_path[name]
             name = op.splitext(name)[0].replace(replace_str, '')
         else:
-            name = op.splitext(op.basename(path[0]))[0].replace(replace_str, '')
+            name = op.splitext(op.basename(path))[0].replace(replace_str, '')
 
         key = info_list.append_name(name, names)
 
         if type_set == 1:
-            info_list.set_tex(key, path[0])
+            info_list.set_tex(key, path)
         if type_set == 2:
-            info_list.set_mesh(key, path[0])
+            info_list.set_mesh(key, path)
 
     return info_write
 
@@ -126,7 +125,10 @@ def file_deal2(paths, info_list: InfoClasses.PerWorkList, clear_list: bool = Fal
             num = len(info_list)
 
         if clear_list:
-            # info_list.clear()
+            if type_set == 2:
+                info_list.clear_mesh()
+            if type_set == 1:
+                info_list.clear_tex()
             num = 0
 
         if not len(paths) == 0:
@@ -138,17 +140,15 @@ def file_deal2(paths, info_list: InfoClasses.PerWorkList, clear_list: bool = Fal
                                               names, type_set)
 
             path_len = len(path)
-            paths = zip(path, range(path_len))
 
-            paths = list(paths)
-
-            num += len(list(map(info_write2, list(paths))))
+            num += len(list(map(info_write2, path)))
 
             if path_len == 0:
                 return False, '导入完成，无新增项！'
         else:
             return False, '导入失败，无导入项！'
     except (TypeError, KeyError, RuntimeError)as info:
+        raise
         return False, '导入失败，发生错误！%s' % info
     else:
         return True, '导入成功！ 成功导入%d个！' % num
