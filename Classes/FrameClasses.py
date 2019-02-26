@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import threading
 import time
 
 import wx
@@ -39,13 +38,15 @@ class MainFrame(noname.MyFrame1):
 
         self.painting = WorkClasses.PaintingWork(self, setting=self.setting_self, default=self.default,
                                                  start_path=self.start_path)
-        self.spine_cut = WorkClasses.SpineDivideWork(self, self.start_path)
+        # self.spine_cut = WorkClasses.SpineDivideWork(self, self.start_path)
+
         self.m_button_gui.Enable(False)
 
         self.setting_page = 0
 
-        self.m_simplebook_input.SetSelection(0)
-        self.m_choice_type.SetSelection(0)
+        # self.m_simplebook_input.SetSelection(0)
+        # self.m_choice_type.SetSelection(0)
+
         self.m_notebook_info.SetSelection(0)
         self.m_listbook_in.SetSelection(0)
 
@@ -61,9 +62,9 @@ class MainFrame(noname.MyFrame1):
         if self.is_open_give:
             self.painting.open_give(self.open_give)
 
-    def append_error(self, error_info):
-        self.m_listBox_errors.Append(error_info)
-        self.error_list.append(error_info)
+    # def append_error(self, error_info):
+    #    self.m_listBox_errors.Append(error_info)
+    #    self.error_list.append(error_info)
 
     def any_error(self):
         return self.error_list != []
@@ -76,11 +77,11 @@ class MainFrame(noname.MyFrame1):
     def load_Mesh(self, event):
         self.painting.load_mesh()
 
-    def load_body(self, event):
-        self.spine_cut.load_body()
-
-    def load_cut(self, event):
-        self.spine_cut.load_cuter()
+        # def load_body(self, event):
+        #    self.spine_cut.load_body()
+        #
+        # def load_cut(self, event):
+        # self.spine_cut.load_cuter()
 
     def load_mesh_fold(self, event):
         self.painting.load_mesh_fold()
@@ -104,12 +105,12 @@ class MainFrame(noname.MyFrame1):
     def open_pass(self, event):
         self.painting.open_pass()
 
-    def open_pic(self, event):
-        self.spine_cut.pic_open()
+    # def open_pic(self, event):
+    #    self.spine_cut.pic_open()
 
     # export
-    def export_pic(self, event):
-        self.spine_cut.export_pic()
+    # def export_pic(self, event):
+    #    self.spine_cut.export_pic()
 
     def export_choice(self, event):
         if self.painting.is_choice() is not None:
@@ -207,8 +208,8 @@ class MainFrame(noname.MyFrame1):
 
         self.exit()
 
-    def reset_spine(self, event):
-        self.spine_cut.reset()
+    # def reset_spine(self, event):
+    #    self.spine_cut.reset()
 
     def exit(self, thread_exit=False):
 
@@ -216,6 +217,7 @@ class MainFrame(noname.MyFrame1):
             json.dump(self.setting_self, file_save)
         with open("%s\\files\\default.json" % self.start_path, 'w')as file_:
             json.dump(self.default, file_)
+
         if thread_exit:
             time.sleep(2)
             self.Destroy()
@@ -268,25 +270,27 @@ class MainFrame(noname.MyFrame1):
 
         self.setting_page = dialog.GetSelection()
 
-    def show_gl_win(self, event):
-        dialog = noname.MyDialog7(self)
+    # def show_gl_win(self, event):
+    #    dialog = noname.MyDialog7(self)
 
-        dialog.ShowModal()
 
-    def change_type(self, event):
-        choice = self.m_choice_type.GetSelection()
-        if choice == 2:
-            self.m_choice_type.SetSelection(self.choice)
-
-            message = wx.MessageBox("将启动AzurLaneLive2DExtract所在文件夹，\n运行并直接将live2D文件拖入即可。", '信息', wx.YES_NO)
-            if message == wx.YES:
-                # os.system(r'start %s\\files\\lived\\AzurLaneLive2DExtract.exe' % self.start_path)
-                os.system(r'start "%s\\files\\lived"' % self.start_path)
-            else:
-                pass
-        else:
-            self.choice = choice
-            self.m_simplebook_input.SetSelection(choice)
+#
+#    dialog.ShowModal()
+#
+# def change_type(self, event):
+#    choice = self.m_choice_type.GetSelection()
+#    if choice == 2:
+#        self.m_choice_type.SetSelection(self.choice)
+#
+#        message = wx.MessageBox("将启动AzurLaneLive2DExtract所在文件夹，\n运行并直接将live2D文件拖入即可。", '信息', wx.YES_NO)
+#        if message == wx.YES:
+#            # os.system(r'start %s\\files\\lived\\AzurLaneLive2DExtract.exe' % self.start_path)
+#            os.system(r'start "%s\\files\\lived"' % self.start_path)
+#        else:
+#            pass
+#    else:
+#        self.choice = choice
+#        self.m_simplebook_input.SetSelection(choice)
 
 
 class Writer(noname.MyDialog_enter_name):
@@ -322,6 +326,9 @@ class Writer(noname.MyDialog_enter_name):
     def GetValue(self):
         return self.info
 
+    def is_real(self):
+        return self.m_checkBox_real.GetValue()
+
 
 class SettingFrame(noname.MyDialog_Setting):
 
@@ -344,12 +351,12 @@ class SettingFrame(noname.MyDialog_Setting):
 
         self.edit_name = WorkClasses.EditName(self, self.info, self.path)
 
-        self.compare = WorkClasses.Compare(self)
+        # self.compare = WorkClasses.Compare(self)
 
         self.pattern_edit: InfoClasses.PattenEdit = self.set_val.azur_lane_setting.divide_list
 
-        self.encrypt = WorkClasses.EncryptImage(self)
-        self.crypt = WorkClasses.CryptImage(self)
+        # self.encrypt = WorkClasses.EncryptImage(self)
+        # self.crypt = WorkClasses.CryptImage(self)
 
         self.page = setting_select
         self.m_notebook3.SetSelection(self.page)
@@ -398,7 +405,7 @@ class SettingFrame(noname.MyDialog_Setting):
 
     # 名称编辑，添加部分
     def edit_add_name(self, event):
-        self.edit_name.name_edit(self.m_listBox_new1.GetSelection())
+        self.edit_name.edit_name(self.m_listBox_new1.GetSelection())
 
     def name_add(self, event):
         self.edit_name.add_new()
@@ -777,6 +784,12 @@ class AddNewName(noname.MyDialog_add_name):
         super(AddNewName, self).__init__(parent)
         self.key = key
         self.value = value
+
+        if self.key != '':
+            self.m_textCtrl_key.SetLabel(self.key)
+        if self.value != '':
+            self.m_textCtrl_var.SetLabel(self.value)
+
         self.work = False
 
     def ok_work(self, event):
@@ -792,9 +805,3 @@ class AddNewName(noname.MyDialog_add_name):
         return self.key, self.value
 
 
-def main_part(e):
-    app = wx.App(False)
-    frame = MainFrame(None, e)
-    frame.Show()
-
-    app.MainLoop()

@@ -7,7 +7,6 @@ import threading
 import time
 import win32clipboard
 
-import PIL.Image
 import win32con
 import wx
 
@@ -632,174 +631,174 @@ class PaintingWork(BaseWorkClass):
             self.form.m_menuItem_copy_only.Enable(False)
 
 
-class SpineDivideWork(BaseWorkClass):
-    def __init__(self, frame: noname.MyFrame1, start_path=os.getcwd()):
-        super(SpineDivideWork, self).__init__(frame)
-
-        self.path = start_path
-
-        self.dialog = wx.Dialog
-
-        self.cuter = ''
-
-        self.body: PIL.Image = None
-
-        self.bodies = []
-
-        self.name = ''
-
-        self.root = self.frame.m_treeCtrl_boys.AddRoot("娃娃")
-
-        self.frame.m_bpButton_ex_spine.Enable(False)
-
-    def need_work(self):
-
-        if self.body is not None and len(self.cuter) >= 1:
-            self.work()
-
-    def load_body(self):
-        self.dialog = wx.FileDialog(self.frame, 'body', os.getcwd(), '', "*.png",
-                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            self.body = None
-            self.body = function.body_enter(self.dialog.GetFilename())
-
-            self.need_work()
-
-    def load_cuter(self):
-        self.dialog = wx.FileDialog(self.frame, 'divide', os.getcwd(), '', "*.atlas.txt",
-                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
-        if self.dialog.ShowModal() == wx.ID_OK:
-            with open(self.dialog.GetFilename(), 'r')as file:
-                self.cuter = file.read()
-
-            self.need_work()
-
-    def work(self):
-        self.bodies.clear()
-
-        pattern = re.compile(r'.+?\.png\nsize: \d+,\d+\nformat: \w+\nfilter: Linear,Linear\nrepeat: none')
-        cuter = pattern.findall(self.cuter)
-
-        cuter = cuter[0].replace('\\n', '\n')
-
-        name = re.findall(r'.+\.png', cuter)[0]
-        self.name = os.path.splitext(name)[0]
-        name = self.name
-
-        self.cuter = self.cuter.replace(cuter, '')
-
-        pattern = re.compile(r'\w+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+')
-        bodies = pattern.findall(self.cuter)
-        root = self.frame.m_treeCtrl_boys.AppendItem(self.root, name)
-        self.frame.m_treeCtrl_boys.Expand(self.root)
-        for body in bodies:
-            body = body.split("\n  ")
-
-            pattern = re.compile(r'[0-9]+')
-            xy = [int(info) for info in pattern.findall(body[2])]
-            size = [int(info) for info in pattern.findall(body[3])]
-            rotate = json.loads(body[1].split(' ')[-1])
-            cuter = function.cuter(self.body, xy, size, rotate)
-            self.bodies.append({'name': body[0],
-                                'xy': xy,
-                                'size': size,
-                                'rotate': rotate,
-                                'pic': cuter})
-            body = self.frame.m_treeCtrl_boys.AppendItem(root, 'name: ' + body[0])
-            xy_item = self.frame.m_treeCtrl_boys.AppendItem(body, "[X，Y]: " + json.dumps(xy))
-            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "X：%d" % (xy[0]))
-            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "Y：%d" % (xy[1]))
-            size_item = self.frame.m_treeCtrl_boys.AppendItem(body, 'size: ' + json.dumps(size))
-            self.frame.m_treeCtrl_boys.AppendItem(size_item, "wide：%d" % (size[0]))
-            self.frame.m_treeCtrl_boys.AppendItem(size_item, "high：%d" % (size[1]))
-
-            self.frame.m_treeCtrl_boys.AppendItem(body, 'rotate: ' + json.dumps(rotate))
-
-            self.frame.m_bpButton_ex_spine.Enable(True)
-            self.frame.m_bpButton_cut_way.Enable(False)
-            self.frame.m_bpButton_body.Enable(False)
-
-            self.frame.m_staticText_now.SetLabel("OK")
-
-    def pic_open(self):
-        print(self.frame.m_treeCtrl_boys.GetSelection())
-
-    def export_pic(self):
-        self.dialog = wx.DirDialog(self.frame, 'divide', os.getcwd(),
-                                   wx.DD_DIR_MUST_EXIST | wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            path = os.path.join(self.dialog.GetPath(), self.name)
-            os.makedirs(path, exist_ok=True)
-            for val in self.bodies:
-                path_save = os.path.join(path, f"{val['name']}.png")
-                val['pic'].save(path_save)
-
-            self.frame.m_gauge_ex_spine.SetValue(100)
-            self.frame.m_bpButton_ex_spine.Enable(False)
-
-    def reset(self):
-
-        self.cuter = ''
-
-        self.body: PIL.Image = None
-
-        self.bodies = []
-
-        self.name = ''
-
-        self.frame.m_bpButton_ex_spine.Enable(False)
-        self.frame.m_bpButton_cut_way.Enable(True)
-        self.frame.m_bpButton_body.Enable(True)
-
-
-class EncryptImage(BaseWorkClass):
-    def __init__(self, frame: noname.MyDialog_Setting):
-        super(EncryptImage, self).__init__(frame)
-        self.dialog = None
-        self.in_show = []
-        self.path = {}
-
-    def in_file(self):
-        self.frame.m_gauge_file.SetValue(0)
-        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
-                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
-                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
-
-            if returned:
-                self.frame.m_gauge_file.SetValue(100)
-                self.frame.m_listBox_pics.Clear()
-                self.frame.m_listBox_pics.Set(self.in_show)
-
-    def in_folder(self):
-        self.frame.m_gauge_dir.SetValue(0)
-        self.dialog = wx.DirDialog(self.frame, "打开",
-                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            path = function.all_file_path(self.dialog.GetPath())[1]
-
-            returned = tools.file_deal(path, self.in_show, [], [], self.path,
-                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
-
-            if returned:
-                self.frame.m_gauge_dir.SetValue(100)
-                self.frame.m_listBox_pics.Clear()
-                self.frame.m_listBox_pics.Set(self.in_show)
-
-    def start(self):
-        self.dialog = wx.DirDialog(self.frame, "保存",
-                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
-        if self.dialog.ShowModal() == wx.ID_OK:
-            thread = Threads.EncryptTread(self.in_show, self.frame.m_choice_type.GetSelection(), self.path,
-                                          self.dialog.GetPath(), self.frame)
-            thread.start()
-            self.frame.m_button_star.Enable(False)
+# class SpineDivideWork(BaseWorkClass):
+#    def __init__(self, frame: noname.MyFrame1, start_path=os.getcwd()):
+#        super(SpineDivideWork, self).__init__(frame)
+#
+#        self.path = start_path
+#
+#        self.dialog = wx.Dialog
+#
+#        self.cuter = ''
+#
+#        self.body: PIL.Image = None
+#
+#        self.bodies = []
+#
+#        self.name = ''
+#
+#        self.root = self.frame.m_treeCtrl_boys.AddRoot("娃娃")
+#
+#        self.frame.m_bpButton_ex_spine.Enable(False)
+#
+#    def need_work(self):
+#
+#        if self.body is not None and len(self.cuter) >= 1:
+#            self.work()
+#
+#    def load_body(self):
+#        self.dialog = wx.FileDialog(self.frame, 'body', os.getcwd(), '', "*.png",
+#                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            self.body = None
+#            self.body = function.body_enter(self.dialog.GetFilename())
+#
+#            self.need_work()
+#
+#    def load_cuter(self):
+#        self.dialog = wx.FileDialog(self.frame, 'divide', os.getcwd(), '', "*.atlas.txt",
+#                                    wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.FD_CHANGE_DIR)
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            with open(self.dialog.GetFilename(), 'r')as file:
+#                self.cuter = file.read()
+#
+#            self.need_work()
+#
+#    def work(self):
+#        self.bodies.clear()
+#
+#        pattern = re.compile(r'.+?\.png\nsize: \d+,\d+\nformat: \w+\nfilter: Linear,Linear\nrepeat: none')
+#        cuter = pattern.findall(self.cuter)
+#
+#        cuter = cuter[0].replace('\\n', '\n')
+#
+#        name = re.findall(r'.+\.png', cuter)[0]
+#        self.name = os.path.splitext(name)[0]
+#        name = self.name
+#
+#        self.cuter = self.cuter.replace(cuter, '')
+#
+#        pattern = re.compile(r'\w+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+\n\s\s[ \S,]+')
+#        bodies = pattern.findall(self.cuter)
+#        root = self.frame.m_treeCtrl_boys.AppendItem(self.root, name)
+#        self.frame.m_treeCtrl_boys.Expand(self.root)
+#        for body in bodies:
+#            body = body.split("\n  ")
+#
+#            pattern = re.compile(r'[0-9]+')
+#            xy = [int(info) for info in pattern.findall(body[2])]
+#            size = [int(info) for info in pattern.findall(body[3])]
+#            rotate = json.loads(body[1].split(' ')[-1])
+#            cuter = function.cuter(self.body, xy, size, rotate)
+#            self.bodies.append({'name': body[0],
+#                                'xy': xy,
+#                                'size': size,
+#                                'rotate': rotate,
+#                                'pic': cuter})
+#            body = self.frame.m_treeCtrl_boys.AppendItem(root, 'name: ' + body[0])
+#            xy_item = self.frame.m_treeCtrl_boys.AppendItem(body, "[X，Y]: " + json.dumps(xy))
+#            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "X：%d" % (xy[0]))
+#            self.frame.m_treeCtrl_boys.AppendItem(xy_item, "Y：%d" % (xy[1]))
+#            size_item = self.frame.m_treeCtrl_boys.AppendItem(body, 'size: ' + json.dumps(size))
+#            self.frame.m_treeCtrl_boys.AppendItem(size_item, "wide：%d" % (size[0]))
+#            self.frame.m_treeCtrl_boys.AppendItem(size_item, "high：%d" % (size[1]))
+#
+#            self.frame.m_treeCtrl_boys.AppendItem(body, 'rotate: ' + json.dumps(rotate))
+#
+#            self.frame.m_bpButton_ex_spine.Enable(True)
+#            self.frame.m_bpButton_cut_way.Enable(False)
+#            self.frame.m_bpButton_body.Enable(False)
+#
+#            self.frame.m_staticText_now.SetLabel("OK")
+#
+#    def pic_open(self):
+#        print(self.frame.m_treeCtrl_boys.GetSelection())
+#
+#    def export_pic(self):
+#        self.dialog = wx.DirDialog(self.frame, 'divide', os.getcwd(),
+#                                   wx.DD_DIR_MUST_EXIST | wx.DD_NEW_DIR_BUTTON | wx.DD_CHANGE_DIR)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            path = os.path.join(self.dialog.GetPath(), self.name)
+#            os.makedirs(path, exist_ok=True)
+#            for val in self.bodies:
+#                path_save = os.path.join(path, f"{val['name']}.png")
+#                val['pic'].save(path_save)
+#
+#            self.frame.m_gauge_ex_spine.SetValue(100)
+#            self.frame.m_bpButton_ex_spine.Enable(False)
+#
+#    def reset(self):
+#
+#        self.cuter = ''
+#
+#        self.body: PIL.Image = None
+#
+#        self.bodies = []
+#
+#        self.name = ''
+#
+#        self.frame.m_bpButton_ex_spine.Enable(False)
+#        self.frame.m_bpButton_cut_way.Enable(True)
+#        self.frame.m_bpButton_body.Enable(True)
+#
+#
+# class EncryptImage(BaseWorkClass):
+#    def __init__(self, frame: noname.MyDialog_Setting):
+#        super(EncryptImage, self).__init__(frame)
+#        self.dialog = None
+#        self.in_show = []
+#        self.path = {}
+#
+#    def in_file(self):
+#        self.frame.m_gauge_file.SetValue(0)
+#        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
+#                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
+#                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
+#
+#            if returned:
+#                self.frame.m_gauge_file.SetValue(100)
+#                self.frame.m_listBox_pics.Clear()
+#                self.frame.m_listBox_pics.Set(self.in_show)
+#
+#    def in_folder(self):
+#        self.frame.m_gauge_dir.SetValue(0)
+#        self.dialog = wx.DirDialog(self.frame, "打开",
+#                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            path = function.all_file_path(self.dialog.GetPath())[1]
+#
+#            returned = tools.file_deal(path, self.in_show, [], [], self.path,
+#                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
+#
+#            if returned:
+#                self.frame.m_gauge_dir.SetValue(100)
+#                self.frame.m_listBox_pics.Clear()
+#                self.frame.m_listBox_pics.Set(self.in_show)
+#
+#    def start(self):
+#        self.dialog = wx.DirDialog(self.frame, "保存",
+#                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            thread = Threads.EncryptTread(self.in_show, self.frame.m_choice_type.GetSelection(), self.path,
+#                                          self.dialog.GetPath(), self.frame)
+#            thread.start()
+#            self.frame.m_button_star.Enable(False)
 
 
 class Setting(BaseWorkClass):
@@ -1037,48 +1036,48 @@ class Setting(BaseWorkClass):
         return var, self.default
 
 
-class CryptImage(EncryptImage):
-    def __init__(self, frame: noname.MyDialog_Setting):
-        super(CryptImage, self).__init__(frame)
-
-    def in_file(self):
-        self.frame.m_gauge_file_in.SetValue(0)
-        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
-                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
-                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
-
-            if returned:
-                self.frame.m_gauge_file_in.SetValue(100)
-                self.frame.m_listBox_pic_in.Clear()
-                self.frame.m_listBox_pic_in.Set(self.in_show)
-
-    def in_folder(self):
-        self.frame.m_gauge_fold_in.SetValue(0)
-        self.dialog = wx.DirDialog(self.frame, "打开",
-                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
-
-        if self.dialog.ShowModal() == wx.ID_OK:
-            path = function.all_file_path(self.dialog.GetPath())[1]
-
-            returned = tools.file_deal(path, self.in_show, [], [], self.path,
-                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
-
-            if returned:
-                self.frame.m_gauge_fold_in.SetValue(100)
-                self.frame.m_listBox_pic_in.Clear()
-                self.frame.m_listBox_pic_in.Set(self.in_show)
-
-    def start(self):
-        self.dialog = wx.DirDialog(self.frame, "保存",
-                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
-        if self.dialog.ShowModal() == wx.ID_OK:
-            thread = Threads.CryptTread(self.in_show, self.frame.m_choice_type_in.GetSelection(), self.path,
-                                        self.dialog.GetPath(), self.frame)
-            thread.start()
-            self.frame.m_button_star_in.Enable(False)
+# class CryptImage(EncryptImage):
+#    def __init__(self, frame: noname.MyDialog_Setting):
+#        super(CryptImage, self).__init__(frame)
+#
+#    def in_file(self):
+#        self.frame.m_gauge_file_in.SetValue(0)
+#        self.dialog = wx.FileDialog(self.frame, "打开", wildcard="*.png",
+#                                    style=wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            returned = tools.file_deal(self.dialog.GetPaths(), self.in_show, [], [], self.path,
+#                                       pattern=r'^.+\.[Pp][Nn][Gg]$')
+#
+#            if returned:
+#                self.frame.m_gauge_file_in.SetValue(100)
+#                self.frame.m_listBox_pic_in.Clear()
+#                self.frame.m_listBox_pic_in.Set(self.in_show)
+#
+#    def in_folder(self):
+#        self.frame.m_gauge_fold_in.SetValue(0)
+#        self.dialog = wx.DirDialog(self.frame, "打开",
+#                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+#
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            path = function.all_file_path(self.dialog.GetPath())[1]
+#
+#            returned = tools.file_deal(path, self.in_show, [], [], self.path,
+#                                       pattern=r'^.+\.[Pp][Nn][Gg]$', is_file=False)
+#
+#            if returned:
+#                self.frame.m_gauge_fold_in.SetValue(100)
+#                self.frame.m_listBox_pic_in.Clear()
+#                self.frame.m_listBox_pic_in.Set(self.in_show)
+#
+#    def start(self):
+#        self.dialog = wx.DirDialog(self.frame, "保存",
+#                                   style=wx.DD_CHANGE_DIR | wx.DD_NEW_DIR_BUTTON | wx.DD_DIR_MUST_EXIST)
+#        if self.dialog.ShowModal() == wx.ID_OK:
+#            thread = Threads.CryptTread(self.in_show, self.frame.m_choice_type_in.GetSelection(), self.path,
+#                                        self.dialog.GetPath(), self.frame)
+#            thread.start()
+#            self.frame.m_button_star_in.Enable(False)
 
 
 class Compare:
@@ -1132,16 +1131,17 @@ class EditName(BaseWorkClass):
         self.start_path = start_path
 
         with open("%s\\files\\names.json" % self.start_path, 'r')as file:
-            self.name_edit = InfoClasses.NamesEdit.form_dict(json.load(file))
-
+            # 原有的键值对
+            dict_val = json.load(file)
+        self.name_edit = InfoClasses.NamesEdit.form_dict(dict_val)
+        self.copy_old = dict_val.copy()
+        # 新添加的键值对
         self.add_new_name = InfoClasses.NamesEdit.form_dict({})
-
+        # 搜索用
         self.search = InfoClasses.NamesEdit()
-
+        # 需要添加
         self.need_add = InfoClasses.NamesEdit(info.build_no_cn())
-
         self.need_add.all_to_false = lambda: list(map(lambda x: x.set_has_cn(), self.need_add))
-
         self.need_add.all_to_false()
 
         self.finish_num = 0
@@ -1154,6 +1154,7 @@ class EditName(BaseWorkClass):
         self.frame.m_listBox_change.Clear()
         self.frame.m_listBox_change.Set(self.name_edit.for_show)
 
+    # 修改已有的键值对
     def change_name(self):
 
         index = self.frame.m_listBox_change.GetSelection()
@@ -1168,13 +1169,19 @@ class EditName(BaseWorkClass):
             value = writer.GetValue()
 
             self.name_edit.edit(value.name, value.val)
+            if value.name in self.add_new_name:
+                index_val = self.add_new_name.get_index(value)
+                self.add_new_name.edit(value.name, value.val)
+                self.frame.m_listBox_new1.SetString(index_val, self.add_new_name.for_show[index_val])
+
             if not self.search:
                 index = self.name_edit.get_index(value)
+                self.frame.m_listBox_change.SetString(index, self.name_edit.for_show[index])
             else:
                 self.search.edit(value.name, value)
                 index = self.search.get_index(value)
 
-            self.frame.m_listBox_change.SetString(index, value.get_show(index))
+                self.frame.m_listBox_change.SetString(index, self.search.for_show[index])
 
     def searching(self):
         value = self.frame.m_searchCtrl2.GetValue()
@@ -1190,9 +1197,11 @@ class EditName(BaseWorkClass):
             self.frame.m_listBox_change.Clear()
             self.frame.m_listBox_change.Set(self.name_edit.for_show)
 
+    # 需要添加键值对
     def add_init(self):
 
         self.frame.m_listBox_new.Set(self.need_add.for_show)
+        self.frame.m_bpButton_del_name.Enable(False)
 
     def open_add_name(self):
         index = self.frame.m_listBox_new.GetSelection()
@@ -1202,7 +1211,9 @@ class EditName(BaseWorkClass):
         writer.ShowModal()
         if writer.is_able():
             value = writer.GetValue()
+
             self.finish_num += 1
+
             self.need_add[value.name] = value
             index = self.need_add.get_index(value)
 
@@ -1213,6 +1224,7 @@ class EditName(BaseWorkClass):
         scale = function.re_int(100 * (self.finish_num / len(self.need_add)))
         self.frame.m_gauge5.SetValue(scale)
 
+    # 添加新键值对
     def add_new(self):
         dialog = FrameClasses.AddNewName(self.frame)
         dialog.ShowModal()
@@ -1220,31 +1232,65 @@ class EditName(BaseWorkClass):
             key, value = dialog.get_value()
             bo = self.add_new_name.append(key, value)
 
+            has = self.name_edit.append(key, value, True)
+
             if not bo:
-                self.frame.m_listBox_new1.Append(self.add_new_name.for_show[-1])
+                val = self.add_new_name.for_show[-1]
+                self.frame.m_listBox_new1.Append(val)
             else:
                 index = self.add_new_name.get_index(key)
                 self.frame.m_listBox_new1.SetString(index, self.add_new_name.for_show[index])
+                # 添加到全部
+            if not has:
+                val = self.name_edit.for_show[-1]
+                self.frame.m_listBox_change.Append(val)
+            else:
+                index = self.name_edit.get_index(key)
+                self.frame.m_listBox_change.SetString(index, self.name_edit.for_show[index])
+
+            if len(self.add_new_name) > 0:
+                self.frame.m_bpButton_del_name.Enable(True)
 
     def del_name(self, index):
-        dialog = wx.MessageBox(f'你确实要删除\n{self.name_edit[index]}吗？', '提示', wx.YES_NO)
+        dialog = wx.MessageBox(f'你确实要删除\n{self.add_new_name[index]}吗？', '提示', wx.YES_NO)
         if dialog == wx.YES:
-
+            val = self.add_new_name[index]
             self.add_new_name.del_name(index)
+
+            index_all = self.name_edit.get_index(val)
+            self.name_edit.del_name(index_all)
 
             self.frame.m_listBox_new1.Clear()
             self.frame.m_listBox_new1.Set(self.add_new_name.for_show)
+            self.frame.m_listBox_change.Clear()
+            self.frame.m_listBox_change.Set(self.name_edit.for_show)
         else:
             pass
 
+        if len(self.add_new_name) == 0:
+            self.frame.m_bpButton_del_name.Enable(False)
+
     def edit_name(self, index):
 
-        dialog = FrameClasses.AddNewName(self.frame, self.name_edit[index].name, self.name_edit[index])
+        dialog = FrameClasses.Writer(self.frame, self.add_new_name[index])
         dialog.ShowModal()
-        if dialog.work:
-            key, value = dialog.get_value()
-            self.add_new_name.edit(key, value)
+
+        if dialog.is_able():
+            val = dialog.GetValue()
+            key = val.name
+            value = val.val
+            is_it = dialog.is_real()
+
+            self.add_new_name.edit(key, value, is_it)
+            index_all = self.name_edit.get_index(key)
+            self.name_edit.edit(index_all, value, is_it)
+
             self.frame.m_listBox_new1.SetString(index, self.add_new_name.for_show[index])
+            self.frame.m_listBox_change.SetString(index_all, self.name_edit.for_show[index_all])
+
+    def reset_dict(self):
+        self.name_edit = InfoClasses.NamesEdit.form_dict(self.copy_old)
+        self.initial()
 
     def get_change(self):
         return self.name_edit

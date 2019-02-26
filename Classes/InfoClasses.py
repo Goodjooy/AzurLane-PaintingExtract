@@ -30,9 +30,7 @@ class BasicInfo(object):
     def rebuild_self(self, value):
 
         if isinstance(value, BasicInfo):
-            self.val = value.val
-
-
+            self._val = value.val
         else:
             raise ValueError
 
@@ -632,6 +630,7 @@ class PerEdit(BasicInfo):
 
 class NamesEdit(BasicInfoList):
     def __init__(self, names=None):
+
         self.for_show = list()
         self.for_search = list()
         super().__init__(names)
@@ -639,10 +638,11 @@ class NamesEdit(BasicInfoList):
     def __setitem__(self, key, value: PerEdit):
 
         if key in self:
+
             index = self._key_list.index(key)
             self._key_list[index] = key
 
-            self.for_show[index] = value.get_show(len(self))
+            self.for_show[index] = value.get_show(index + 1)
             self.for_search[index] = value.get_search()
         else:
             self._key_list.append(key)
@@ -674,17 +674,24 @@ class NamesEdit(BasicInfoList):
         return var
 
     def append(self, key, value, has_info=False):
-        if key in self and not has_info:
-            var = wx.MessageBox(f"该键：\t{key}\t已经存在了，继续将会覆盖原有值！", '提示', wx.YES_NO)
-            if var == wx.YES:
+        if key in self:
+            if not has_info:
+                var = wx.MessageBox(f"该键：\t{key}\t已经存在了，继续将会覆盖原有值！", '提示', wx.YES_NO)
+                if var == wx.YES:
+                    self.edit(key, value)
+            else:
                 self.edit(key, value)
             return True
         else:
             self[key] = PerEdit(key, value, True)
-            return False or has_info
+            return False
 
     def edit(self, index, value, has_cn=False):
-        self[index] = PerEdit(self[index].name, value, self[index].has_cn)
+        val: PerEdit = self[index]
+        val.val = value
+        val.set_has_cn(has_cn)
+
+        self[val.name] = val
 
     def del_name(self, index):
         del self[index]

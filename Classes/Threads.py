@@ -150,11 +150,6 @@ class RestoreThread(threading.Thread):
         if self.format.any_error():
             self.format.m_notebook_info.SetSelection(2)
 
-
-
-
-
-
     def stop_(self, stop: bool):
         self.stop = stop
 
@@ -190,11 +185,15 @@ class QuickRestore(threading.Thread):
             else:
                 pic = function.pic_transform(self.info.tex_path, size)
 
-            pic.save("%s\\temp.png" % self.path)
-            temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
-
-            temp = temp.ConvertToBitmap()
             self.father.m_bitmap_show.ClearBackground()
+
+            if pic.width * pic.height <= 640000:
+                temp = self.pil_to_wx_image(pic)
+            else:
+                pic.save("%s\\temp.png" % self.path)
+                temp = wx.Image('%s\\temp.png' % self.path, wx.BITMAP_TYPE_PNG)
+            temp = wx.Bitmap(temp)
+
             self.father.m_bitmap_show.SetBitmap(temp)
 
             self.father.m_notebook_info.SetSelection(1)
@@ -206,10 +205,37 @@ class QuickRestore(threading.Thread):
                 os.system(r'start ' + "\"%s\\temp.png\"" % self.path)
 
         except RuntimeError as info:
-            self.father.append_error(info)
+            # self.father.append_error(info)
+            print(info)
+            raise
 
         if self.father.any_error():
             self.father.m_notebook_info.SetSelection(2)
+
+    @staticmethod
+    def pil_to_wx_image(pic):
+        has_alpha = pic.mode[-1].lower() == "a"
+        if has_alpha:
+
+            temp: wx.Image = wx.Image(pic.width, pic.height)
+
+            temp_rgba = pic.copy()
+            temp_rgb = temp_rgba.convert('RGB')
+
+            rgb_data = temp_rgb.tobytes()
+            temp.SetData(rgb_data)
+            temp.SetAlphaBuffer(temp_rgba.tobytes()[3::4])
+
+        else:
+            temp: wx.Image = wx.Image(pic.width, pic.height)
+
+            temp_rgb = pic.copy()
+            temp_rgb = temp_rgb.convert('RGB')
+
+            rgb_data = temp_rgb.tobytes()
+            temp.SetData(rgb_data)
+
+        return temp
 
 
 class BackInfo(threading.Thread):
@@ -220,79 +246,78 @@ class BackInfo(threading.Thread):
     def run(self):
         self.father.update_names()
 
-
-class CompareThread(threading.Thread):
-    def __init__(self, father):
-        super().__init__()
-        self.father = father
-
-    def compare(self):
-        num = 0
-        for name in self.father.old_fold_list[0]:
-            name_old = name
-            name = name[len(self.father.old_fold) + 1:]
-            name = "%s\\%s" % (self.father.new_fold, name)
-
-            if name not in self.father.new_fold_list[0]:
-                num += 1
-                if name not in self.father._new_add:
-                    self.father._new_add.append(name_old)
-                    self.father._new_add_show.append("%d） %s" % (num, name_old))
-        self.father.frame.m_listBox_deffer.Clear()
-        self.father.frame.m_listBox_deffer.Set(self.father._new_add_show)
-
-    def run(self):
-        self.compare()
-
-
-class EncryptTread(threading.Thread):
-    def __init__(self, list_pic, type_use, dic_pic, save_path, frame: noname.MyDialog_Setting):
-        super(EncryptTread, self).__init__()
-
-        self.list_pic = list_pic
-        self.type = type_use
-
-        self.dic_list = dic_pic
-        self.save = save_path
-        self.frame = frame
-
-    def run(self):
-        num = 1
-        self.frame.m_gauge_works.SetValue(0)
-        for val in self.list_pic:
-            if self.type == 0:
-                function.encrypt_basic(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-            if self.type == 1:
-                function.encrypt_easy(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-            if self.type == 2:
-                function.encrypt_differ(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-
-            num += 1
-
-            self.frame.m_gauge_works.SetValue(round(100 * (num / len(self.list_pic))))
-
-        self.frame.m_button_star.Enable(True)
-        self.frame.m_gauge_works.SetValue(100)
+# class CompareThread(threading.Thread):
+#    def __init__(self, father):
+#        super().__init__()
+#        self.father = father
+#
+#    def compare(self):
+#        num = 0
+#        for name in self.father.old_fold_list[0]:
+#            name_old = name
+#            name = name[len(self.father.old_fold) + 1:]
+#            name = "%s\\%s" % (self.father.new_fold, name)
+#
+#            if name not in self.father.new_fold_list[0]:
+#                num += 1
+#                if name not in self.father._new_add:
+#                    self.father._new_add.append(name_old)
+#                    self.father._new_add_show.append("%d） %s" % (num, name_old))
+#        self.father.frame.m_listBox_deffer.Clear()
+#        self.father.frame.m_listBox_deffer.Set(self.father._new_add_show)
+#
+#    def run(self):
+#        self.compare()
 
 
-class CryptTread(EncryptTread):
-    def __init__(self, list_pic, type_use, dic_pic, save_path, frame: noname.MyDialog_Setting):
-        super(CryptTread, self).__init__(list_pic, type_use, dic_pic, save_path, frame)
-
-    def run(self):
-        num = 1
-        self.frame.m_gauge_work_in.SetValue(0)
-        for val in self.list_pic:
-            if self.type == 0:
-                function.crypt_basic(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-            if self.type == 1:
-                function.crypt_easy(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-            if self.type == 2:
-                function.crypt_differ(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
-
-            num += 1
-
-            self.frame.m_gauge_work_in.SetValue(round(100 * (num / len(self.list_pic))))
-
-        self.frame.m_button_star_in.Enable(True)
-        self.frame.m_gauge_work_in.SetValue(100)
+# class EncryptTread(threading.Thread):
+#    def __init__(self, list_pic, type_use, dic_pic, save_path, frame: noname.MyDialog_Setting):
+#        super(EncryptTread, self).__init__()
+#
+#        self.list_pic = list_pic
+#        self.type = type_use
+#
+#        self.dic_list = dic_pic
+#        self.save = save_path
+#        self.frame = frame
+#
+#    def run(self):
+#        num = 1
+#        self.frame.m_gauge_works.SetValue(0)
+#        for val in self.list_pic:
+#            if self.type == 0:
+#                function.encrypt_basic(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#            if self.type == 1:
+#                function.encrypt_easy(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#            if self.type == 2:
+#                function.encrypt_differ(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#
+#            num += 1
+#
+#            self.frame.m_gauge_works.SetValue(round(100 * (num / len(self.list_pic))))
+#
+#        self.frame.m_button_star.Enable(True)
+#        self.frame.m_gauge_works.SetValue(100)
+#
+#
+# class CryptTread(EncryptTread):
+#    def __init__(self, list_pic, type_use, dic_pic, save_path, frame: noname.MyDialog_Setting):
+#        super(CryptTread, self).__init__(list_pic, type_use, dic_pic, save_path, frame)
+#
+#    def run(self):
+#        num = 1
+#        self.frame.m_gauge_work_in.SetValue(0)
+#        for val in self.list_pic:
+#            if self.type == 0:
+#                function.crypt_basic(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#            if self.type == 1:
+#                function.crypt_easy(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#            if self.type == 2:
+#                function.crypt_differ(self.dic_list[val]).save(os.path.join(self.save, val + ".png"))
+#
+#            num += 1
+#
+#            self.frame.m_gauge_work_in.SetValue(round(100 * (num / len(self.list_pic))))
+#
+#        self.frame.m_button_star_in.Enable(True)
+#        self.frame.m_gauge_work_in.SetValue(100)
