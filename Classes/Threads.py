@@ -6,7 +6,7 @@ import time
 
 import wx
 
-from Classes import noname, InfoClasses
+from Classes import noname, InfoClasses,FrameClasses
 from Functions import function
 
 
@@ -187,6 +187,7 @@ class QuickRestore(threading.Thread):
 
             self.father.m_bitmap_show.ClearBackground()
 
+            # temp = self.pil_to_wx_image(pic)
             if pic.width * pic.height <= 640000:
                 temp = self.pil_to_wx_image(pic)
             else:

@@ -720,6 +720,47 @@ class MyDialogQuick ( wx.Dialog ):
 
 
 ###########################################################################
+## Class MyFrame3
+###########################################################################
+
+class MyFrame3 ( wx.Frame ):
+
+	def __init__( self, parent ):
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 395,98 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+
+		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_INACTIVEBORDER ) )
+
+		bSizer58 = wx.BoxSizer( wx.VERTICAL )
+
+		self.m_button19 = wx.Button( self, wx.ID_ANY, u"退出", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer58.Add( self.m_button19, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+
+		self.m_staticText31 = wx.StaticText( self, wx.ID_ANY, u"强行退出按键，请注意，该功能用于强行退出程序，其他情况请勿使用", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText31.Wrap( -1 )
+
+		bSizer58.Add( self.m_staticText31, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+
+
+		self.SetSizer( bSizer58 )
+		self.Layout()
+
+		self.Centre( wx.BOTH )
+
+		# Connect Events
+		self.m_button19.Bind( wx.EVT_BUTTON, self.exit_worker )
+
+	def __del__( self ):
+		pass
+
+
+	# Virtual event handlers, overide them in your derived class
+	def exit_worker( self, event ):
+		event.Skip()
+
+
+###########################################################################
 ## Class MyDialog_enter_name
 ###########################################################################
 

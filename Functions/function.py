@@ -1,5 +1,5 @@
-import functools
-import re
+from functools import reduce
+from re import match, split
 
 import PIL.Image
 import numpy as np
@@ -97,13 +97,13 @@ def az_paint_restore(mesh_path: str, tex_path: str):
     with open(mesh_path, 'r', encoding='utf-8')as file:
         files_line = file.readlines()
 
-    draw_pic = filter(lambda x: re.match(r'^v\s-*\d+\s-*\d+\s-*\d+\n$', x), files_line)
-    tex_pos = filter(lambda x: re.match(r'^vt\s0\.\d+\s0\.\d+\n$', x), files_line)
-    print_pos = filter(lambda x: re.match(r'^f\s\d+/\d+/\d+\s\d+/\d+/\d+\s\d+/\d+/\d+\n$', x), files_line)
+    draw_pic = filter(lambda x: match(r'^v\s-*\d+\s-*\d+\s-*\d+\n$', x), files_line)
+    tex_pos = filter(lambda x: match(r'^vt\s0\.\d+\s0\.\d+\n$', x), files_line)
+    print_pos = filter(lambda x: match(r'^f\s\d+/\d+/\d+\s\d+/\d+/\d+\s\d+/\d+/\d+\n$', x), files_line)
 
-    draw_pic = map(lambda x: re.split(r'\D+', x), draw_pic)
-    tex_pos = map(lambda x: re.split(r'[^0-9.]+', x), tex_pos)
-    print_pos = map(lambda x: re.split(r'\D+', x), print_pos)
+    draw_pic = map(lambda x: split(r'\D+', x), draw_pic)
+    tex_pos = map(lambda x: split(r'[^0-9.]+', x), tex_pos)
+    print_pos = map(lambda x: split(r'\D+', x), print_pos)
 
     draw_pic = (map(lambda x: [int(x[1]), int(x[2])], draw_pic))
     tex_pos = (map(tex_cuter, tex_pos))
@@ -123,7 +123,7 @@ def az_paint_restore(mesh_path: str, tex_path: str):
 
     restore = (map(division, print_pos))
 
-    pic_out = functools.reduce(draw, restore, pic)
+    pic_out = reduce(draw, restore, pic)
 
     return pic_out
 

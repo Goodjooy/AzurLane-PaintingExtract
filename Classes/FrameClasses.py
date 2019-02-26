@@ -117,6 +117,9 @@ class MainFrame(noname.MyFrame1):
             self.painting.export_choice()
 
     def export_all(self, event):
+        info = ExitNow(self)
+        info.Show()
+
         title = '保存'
         if self.painting.is_able():
             title += "-碧蓝航线"
@@ -805,3 +808,12 @@ class AddNewName(noname.MyDialog_add_name):
         return self.key, self.value
 
 
+class ExitNow(noname.MyFrame3):
+    def __init__(self, parent):
+        super(ExitNow, self).__init__(parent)
+
+    def exit_worker(self, event):
+        os._exit(10)
+
+    def exit_form(self):
+        self.Destroy()

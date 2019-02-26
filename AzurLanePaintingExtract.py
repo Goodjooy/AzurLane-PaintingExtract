@@ -1,5 +1,5 @@
-import os
-import sys
+from os import path
+from sys import argv
 
 import wx
 
@@ -15,6 +15,6 @@ def main_part(info):
 
 
 if __name__ == '__main__':
-    path = os.path.split(os.path.realpath(sys.argv[0]))[0]
+    path = path.split(path.realpath(argv[0]))[0]
 
     main_part(path)
