@@ -6,3 +6,5 @@
 
 *注意：本程序不能直接导出位于unity文件中的立绘，请使用AssetStudio导出贴图（Texture2D）和Mesh文件，再导入
 使用
+
+##新版[https://github.com/azurlane-doujin/AzurLanePaintingExtract-v1.0]
